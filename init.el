@@ -158,7 +158,7 @@
   (dired-auto-revert-buffer t "Refresh the dired buffer whenever unburied")
   (dired-use-ls-dired (if (eq system-type 'darwin)
 			  nil
-			unspecified) "Avoids a warning")
+			'unspecified) "Avoids a warning")
   (dired-listing-switches (if (eq system-type 'gnu/linux)
 			      "-lahF --group-directories-first"
 			    "-lahF") "Group directories when using coreutils ls"))
@@ -550,3 +550,19 @@ must be installed at a minimum."
 ;;;
 
 
+(custom-set-variables
+ ;; custom-set-variables was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ '(custom-enabled-themes '(leuven)))
+(custom-set-faces
+ ;; custom-set-faces was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ '(default ((t (:inherit nil :extend nil :stipple nil :inverse-video nil :box nil :strike-through nil :overline nil :underline nil :slant normal :weight normal :height 170 :width normal :family "Monaco"))))
+ '(Info-quoted ((t (:inherit default :underline t))))
+ '(custom-variable-obsolete ((t (:inherit custom-variable-tag :strike-through t :weight normal))))
+ '(info-menu-header ((t (:weight bold :family "Sans Serif"))))
+ '(line-number ((t (:inherit (shadow default) :height 0.8)))))

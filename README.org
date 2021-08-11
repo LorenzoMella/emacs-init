@@ -1,0 +1,22 @@
+* Emacs Configuration
+
+  A relatively minimal Emacs configuration.
+
+** Heavy-handed additions
+
+  - The [[https://github.com/abo-abo/swiper][=ivy/counsel/swiper=]] narrowing suite, using [[https://github.com/raxod502/prescient.el][=prescient=]] as a backend for sorting matches;
+
+  - Autocompletion with [[https://company-mode.github.io/][=company=]];
+
+  - Support for Microsoft's Language Server Protocol, and its Emacs interface [[https://emacs-lsp.github.io/lsp-mode/][=lsp-mode=]]); as backends I configured support for [[https://github.com/MaskRay/emacs-ccls][=ccls=]] for C/C++ and the Jedi Language Server ([[https://emacs-lsp.github.io/lsp-mode/page/lsp-jedi/][=lsp-jedi=]]) for Python;
+
+  - Emacs Speaks Statistics ([[https://ess.r-project.org/][ESS]]), the R-Studio (almost) replacement;
+
+  
+** Minor additions
+
+   These include [[https://github.com/emacs-dashboard/emacs-dashboard][=dashboard=]] as a centralised front page, [[https://github.com/justbur/emacs-which-key][=which-key=]] for real-time keybinding suggestions, and the [[https://github.com/abo-abo/avy][=avy=]] visual text-jumping package.
+
+** Future plans
+   
+  I will probably include LaTeX support in the near future.

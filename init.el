@@ -33,17 +33,17 @@
 (defvar-local *shell-binary* "/bin/bash"
   "Preferred shell to use with ansi-term.")
 
-(defvar-local *python-interpreter-binary* "python3"
+(defvar-local *python-interpreter-binary* "/opt/local/bin/python3"
   "Path to the preferred python or ipython interpreter.")
 
 (defvar-local *ein-image-viewer* "/bin/feh --image-bg white"
   "Image viewing program used by the ein package (with arguments).")
 
 (defvar-local *jedi-language-server-bin-path*
-  (expand-file-name "jedi-language-server")
+  (expand-file-name "~/Library/Python/3.9/bin/jedi-language-server")
   "Path to the jedi-language-server executable.")
 
-(defvar-local *ccls-bin-path* "ccls"
+(defvar-local *ccls-bin-path* "/opt/local/bin/ccls-clang-8.0"
   "Path to the ccls executable.")
 
 (defvar-local *initial-scratch-message*

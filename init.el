@@ -158,7 +158,7 @@
   (dired-auto-revert-buffer t "Refresh the dired buffer whenever unburied")
   (dired-use-ls-dired (if (eq system-type 'darwin)
 			  nil
-			unspecified) "Avoids a warning")
+			'unspecified) "Avoids a warning")
   (dired-listing-switches (if (eq system-type 'gnu/linux)
 			      "-lahF --group-directories-first"
 			    "-lahF") "Group directories when using coreutils ls"))

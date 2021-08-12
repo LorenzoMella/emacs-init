@@ -9,7 +9,10 @@
 ;; 2. LaTeX support (AUCTeX?)
 ;; 3. EXWM support: automatically activated if no WM is found (of course,Linux only)
 ;; 4. all-the-icons
-
+;;
+;; BUGS:
+;;
+;; ess-mode-hook not working properly at the start of the session. Fine afterwards.
 
 
 ;;;
@@ -162,7 +165,7 @@
   (dired-listing-switches (if (eq system-type 'gnu/linux)
 			      "-lahF --group-directories-first"
 			    "-lahF") "Group directories when using coreutils ls")
-  (dired-ls-F-marks-symlinks t "Rename symlinks correctly, if when marked wit '@' by ls -lF"))
+  (dired-ls-F-marks-symlinks t "Rename symlinks correctly, if when marked with '@' by ls -lF"))
 
 ;; Org customization
 (use-package org-mode

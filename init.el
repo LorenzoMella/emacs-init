@@ -26,7 +26,7 @@
 ;; Little bash script to find all candidates for a binary (e.g., ccls)
 ;; (shell-command
 ;;  "for TOKEN in ${PATH//:/ }; do
-;;     [[ -x $TOKEN ]] && CANDIDATE=$(ls $TOKEN | grep ccls)
+;;     [[ -d $TOKEN ]] && CANDIDATE=$(ls $TOKEN | grep ccls)
 ;;     [[ $CANDIDATE ]] && which $CANDIDATE
 ;;   done")
 

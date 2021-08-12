@@ -161,7 +161,8 @@
 			'unspecified) "Avoids a warning")
   (dired-listing-switches (if (eq system-type 'gnu/linux)
 			      "-lahF --group-directories-first"
-			    "-lahF") "Group directories when using coreutils ls"))
+			    "-lahF") "Group directories when using coreutils ls")
+  (dired-ls-F-marks-symlinks t "Rename symlinks correctly, if when marked wit '@' by ls -lF"))
 
 ;; Org customization
 (use-package org-mode

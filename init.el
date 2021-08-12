@@ -162,7 +162,7 @@
   (dired-listing-switches (if (eq system-type 'gnu/linux)
 			      "-lahF --group-directories-first"
 			    "-lahF") "Group directories when using coreutils ls")
-  (dired-ls-F-marks-symlinks t "Rename symlinks correctly, if when marked wit '@' by ls -lF"))
+  (dired-ls-F-marks-symlinks t "Rename symlinks correctly, if when marked with '@' by ls -lF"))
 
 ;; Org customization
 (use-package org-mode
@@ -428,7 +428,7 @@ must be installed at a minimum."
   (ess-use-ido nil)
   (ess-style 'RStudio)
   :bind
-  (:map ess-mode-map
+  (:map ess-mode-map ; FIX: somehow opening an .r file requires ess-mode-map before loading the package
 	("C-c h" . ess-help)
 	("C-c r" . rmarkdown-render)
 	("C->" . insert-pipe)))

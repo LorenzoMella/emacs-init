@@ -9,10 +9,6 @@
 ;; 2. LaTeX support (AUCTeX?)
 ;; 3. EXWM support: automatically activated if no WM is found (of course,Linux only)
 ;; 4. all-the-icons
-;;
-;; BUGS:
-;;
-;; ess-mode-hook not working properly at the start of the session. Fine afterwards.
 
 
 ;;;
@@ -24,14 +20,17 @@
   "Preferred heap threshold size to start garbage collection.")
 
 (defvar-local *preferred-browser* #'browse-url-default-browser
-  "The browser used by browse-url.")
+  "Any one of the browser symbols defined by the browse-url package.")
 
 ;; Little bash script to find all candidates for a binary (e.g., ccls)
 ;; (shell-command
 ;;  "for TOKEN in ${PATH//:/ }; do
-;;     [[ -x $TOKEN ]] && CANDIDATE=$(ls $TOKEN | grep ccls)
+;;     [[ -d $TOKEN ]] && CANDIDATE=$(ls $TOKEN | grep ccls)
 ;;     [[ $CANDIDATE ]] && which $CANDIDATE
 ;;   done")
+
+(defvar-local *gdb-binary* "/opt/local/bin/ggdb"
+  "gdb executable to use with gdb and gud.")
 
 (defvar-local *shell-binary* "/bin/bash"
   "Preferred shell to use with ansi-term.")
@@ -59,7 +58,7 @@
 
 
 ;;;
-;;; Shortcut to this init file
+;;; General purpose custom functions
 ;;;
 
 
@@ -67,6 +66,19 @@
   "Opens the configuration file currently defined as `user-init-file'."
   (interactive)
   (find-file-existing user-init-file))
+
+(defun frame-resize-and-center (&optional width-fraction)
+  "Resizes the frame to about two thirds of the screen."
+  (interactive (list 0.618)) ; Using the inverted golden ratio in place of 2/3
+  (unless (boundp 'width-fraction)
+    (setq width-fraction 0.618))
+  (let* ((workarea (alist-get 'workarea (car (display-monitor-attributes-list))))
+	 (new-width (floor (* (caddr workarea) width-fraction)))
+	 (new-height (cadddr workarea))
+	 (top-left-x (+ (car workarea) (/ (- (caddr workarea) new-width) 2)))
+	 (top-left-y (cadr workarea)))
+	 (set-frame-size (window-frame) new-width new-height t)
+	 (set-frame-position (window-frame) top-left-x top-left-y))) ; TODO: it doesn't take the right fringe into account
 
 
 ;;;
@@ -126,7 +138,9 @@
 ;; Window resizing, Mac-specific. On Linux I configure equivalent DE shortcuts instead
 (when (equal window-system 'ns)
   (bind-key "s-f" #'toggle-frame-fullscreen)
-  (bind-key "s-m" #'toggle-frame-maximized))
+  (unbind-key "s-m")
+  (bind-key "s-m m" #'toggle-frame-maximized)
+  (bind-key "s-m c" #'frame-resize-and-center))
 
 ;; Remap keys to more convenient commands
 (bind-key [remap kill-buffer] #'kill-current-buffer)
@@ -180,16 +194,16 @@
 ;; GUI browser configuration
 (use-package browse-url
   :custom
-  (browse-url-browser-function		; Somehow, default browser
-   (if (and (eq system-type 'gnu/linux) (file-exists-p *preferred-browser*))
-       browse-url-epiphany
-     browse-url-default-browser)))
+  (browse-url-browser-function *preferred-browser*))
 
 
 ;;;
 ;;; Aesthetic adjustments
 ;;;
 
+
+;; Resize window pixel-wise with mouse
+(customize-save-variable 'frame-resize-pixelwise t)
 
 ;; Replace the default scratch message
 (use-package startup
@@ -430,11 +444,11 @@ must be installed at a minimum."
   :custom
   (ess-use-ido nil)
   (ess-style 'RStudio)
-  :bind
-  (:map ess-mode-map
-	("C-c h" . ess-help)
-	("C-c r" . rmarkdown-render)
-	("C->" . insert-pipe)))
+  :config
+  (with-eval-after-load 'ess-r-mode
+    (bind-key "C-c h" #'ess-help ess-r-mode-map)
+    (bind-key "C-c r" #'rmarkdown-render ess-r-mode-map)
+    (bind-key "C->" #'insert-pipe ess-r-mode-map)))
 
 ;; Poly-R: R-Markdown support based on poly-mode
 (use-package poly-R
@@ -523,6 +537,11 @@ must be installed at a minimum."
   :custom
   (ccls-executable *ccls-bin-path*))
 
+;; Debugger interface
+(use-package gdb-mi
+  :custom
+  (gud-gdb-command-name *gdb-binary*))
+
 ;; Insert Guards
 (defun insert-guards (guard-name)
   "Insert correctly formatted header guards in the file
@@ -559,14 +578,10 @@ must be installed at a minimum."
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- '(custom-enabled-themes '(leuven)))
+ '(frame-resize-pixelwise t))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- '(default ((t (:inherit nil :extend nil :stipple nil :inverse-video nil :box nil :strike-through nil :overline nil :underline nil :slant normal :weight normal :height 170 :width normal :family "Monaco"))))
- '(Info-quoted ((t (:inherit default :underline t))))
- '(custom-variable-obsolete ((t (:inherit custom-variable-tag :strike-through t :weight normal))))
- '(info-menu-header ((t (:weight bold :family "Sans Serif"))))
- '(line-number ((t (:inherit (shadow default) :height 0.8)))))
+ )

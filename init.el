@@ -9,7 +9,8 @@
 ;; 2. LaTeX support (AUCTeX?)
 ;; 3. EXWM support: automatically activated if no WM is found (of course,Linux only)
 ;; 4. all-the-icons
-
+;; 5. more modern scrolling (`scroll-conservatively' set to high values etc.)
+;;    but I've grown to like the default behavior too
 
 
 ;;;
@@ -21,7 +22,7 @@
   "Preferred heap threshold size to start garbage collection.")
 
 (defvar-local *preferred-browser* #'browse-url-default-browser
-  "The browser used by browse-url.")
+  "Any one of the browser symbols defined by the browse-url package.")
 
 ;; Little bash script to find all candidates for a binary (e.g., ccls)
 ;; (shell-command
@@ -30,20 +31,23 @@
 ;;     [[ $CANDIDATE ]] && which $CANDIDATE
 ;;   done")
 
+(defvar-local *gdb-binary* "/opt/local/bin/ggdb"
+  "gdb executable to use with gdb and gud.")
+
 (defvar-local *shell-binary* "/bin/bash"
   "Preferred shell to use with ansi-term.")
 
-(defvar-local *python-interpreter-binary* "python3"
+(defvar-local *python-interpreter-binary* "/opt/local/bin/python3"
   "Path to the preferred python or ipython interpreter.")
 
 (defvar-local *ein-image-viewer* "/bin/feh --image-bg white"
   "Image viewing program used by the ein package (with arguments).")
 
 (defvar-local *jedi-language-server-bin-path*
-  (expand-file-name "jedi-language-server")
+  (expand-file-name "~/Library/Python/3.9/bin/jedi-language-server")
   "Path to the jedi-language-server executable.")
 
-(defvar-local *ccls-bin-path* "ccls"
+(defvar-local *ccls-bin-path* "/opt/local/bin/ccls-clang-8.0"
   "Path to the ccls executable.")
 
 (defvar-local *initial-scratch-message*
@@ -56,7 +60,7 @@
 
 
 ;;;
-;;; Shortcut to this init file
+;;; General purpose custom functions
 ;;;
 
 
@@ -64,6 +68,19 @@
   "Opens the configuration file currently defined as `user-init-file'."
   (interactive)
   (find-file-existing user-init-file))
+
+(defun frame-resize-and-center (&optional width-fraction)
+  "Resizes the frame to about two thirds of the screen."
+  (interactive (list 0.618)) ; Using the inverted golden ratio in place of 2/3
+  (unless (boundp 'width-fraction)
+    (setq width-fraction 0.618))
+  (let* ((workarea (alist-get 'workarea (car (display-monitor-attributes-list))))
+	 (new-width (floor (* (caddr workarea) width-fraction)))
+	 (new-height (cadddr workarea))
+	 (top-left-x (+ (car workarea) (/ (- (caddr workarea) new-width) 2)))
+	 (top-left-y (cadr workarea)))
+    (set-frame-position (window-frame) top-left-x top-left-y)
+    (set-frame-size (window-frame) new-width new-height t))) ; TODO: it doesn't take the fringes into account
 
 
 ;;;
@@ -96,7 +113,7 @@
 
 
 ;; Set the heap threshold for garbage collection
-(setq gc-cons-threshold *gc-bytes*)
+(customize-set-variable 'gc-cons-threshold *gc-bytes*)
 
 ;; Server configuration
 (use-package server
@@ -120,10 +137,12 @@
 (bind-key "s-=" #'text-scale-increase)
 (bind-key "s--" #'text-scale-decrease)
 
-;; Window resizing, Mac-specific. On Linux I configure equivalent DE shortcuts instead
+;; Window resizing, Mac-specific (untested on Linux DEs)
 (when (equal window-system 'ns)
   (bind-key "s-f" #'toggle-frame-fullscreen)
-  (bind-key "s-m" #'toggle-frame-maximized))
+  (unbind-key "s-m")
+  (bind-key "s-m m" #'toggle-frame-maximized)
+  (bind-key "s-m c" #'frame-resize-and-center))
 
 ;; Remap keys to more convenient commands
 (bind-key [remap kill-buffer] #'kill-current-buffer)
@@ -139,6 +158,10 @@
 
 ;; Replace/delete the active region when keys/backspace are pressed
 (delete-selection-mode)
+
+;; Follow symlinks when calling find-file (useful for git awareness)
+(customize-set-variable 'find-file-visit-truename t)
+
 
 ;; Quicken many confirmation prompts
 (defalias 'yes-or-no-p 'y-or-n-p)
@@ -161,32 +184,35 @@
 			'unspecified) "Avoids a warning")
   (dired-listing-switches (if (eq system-type 'gnu/linux)
 			      "-lahF --group-directories-first"
-			    "-lahF") "Group directories when using coreutils ls")
+			    "-lahF")
+			  "ls -l readability adjustments. Group directories first when using coreutils ls")
   (dired-ls-F-marks-symlinks t "Rename symlinks correctly, if when marked with '@' by ls -lF"))
 
 ;; Org customization
 (use-package org-mode
+  :custom
+  (org-hide-emphasis-markers t)
   :hook
   (org-mode . visual-line-mode))
 
 ;; Activate Help windows as they are opened
 (use-package help
   :custom
-  (help-window-select t "Switch to help window automatically"))
+  (help-window-select t "Switch focus to a help window automatically, when created"))
 
 ;; GUI browser configuration
 (use-package browse-url
   :custom
-  (browse-url-browser-function		; Somehow, default browser
-   (if (and (eq system-type 'gnu/linux) (file-exists-p *preferred-browser*))
-       browse-url-epiphany
-     browse-url-default-browser)))
+  (browse-url-browser-function *preferred-browser*))
 
 
 ;;;
 ;;; Aesthetic adjustments
 ;;;
 
+
+;; Resize window pixel-wise with mouse
+(customize-set-variable 'frame-resize-pixelwise t)
 
 ;; Replace the default scratch message
 (use-package startup
@@ -205,7 +231,7 @@
 
 ;; Custom face tweaks
 ;;
-;; 1. For most people, it will suffice using `customize' on the `default' face,
+;; 1. For most people, it will suffice using `customize on the `default' face,
 ;;    WITHOUT changing foreground and background colors, and then apply a theme.
 ;;
 ;; 2. `Info-quoted' and `info-menu-header' have messed up defaults as of version 27.2.
@@ -329,6 +355,9 @@
   :config
   (counsel-mode)
   :bind
+  ;; The following replaces the simple Ivy narrowing of the native M-x,
+  ;; visualizing keybindings, adding more Hydra actions etc.
+  ("M-x" . counsel-M-x)
   ;; The following show previews of the buffer while browsing the list
   ;; (compared to ivy-switch-buffer and ivy-switch-buffer-other-window)
   ("C-x C-b" . counsel-switch-buffer)
@@ -344,7 +373,7 @@
   :config
   (prescient-persist-mode))
 
-;; Interface between the Prescient engine and Ivy
+;; Interface to use the Prescient engine rankings with Ivy
 (use-package ivy-prescient
   :ensure t
   :config
@@ -427,11 +456,11 @@ must be installed at a minimum."
   :custom
   (ess-use-ido nil)
   (ess-style 'RStudio)
-  :bind
-  (:map ess-mode-map ; FIX: somehow opening an .r file requires ess-mode-map before loading the package
-	("C-c h" . ess-help)
-	("C-c r" . rmarkdown-render)
-	("C->" . insert-pipe)))
+  :config
+  (with-eval-after-load 'ess-r-mode
+    (bind-key "C-c h" #'ess-help ess-r-mode-map)
+    (bind-key "C-c r" #'rmarkdown-render ess-r-mode-map)
+    (bind-key "C->" #'insert-pipe ess-r-mode-map)))
 
 ;; Poly-R: R-Markdown support based on poly-mode
 (use-package poly-R
@@ -520,6 +549,11 @@ must be installed at a minimum."
   :custom
   (ccls-executable *ccls-bin-path*))
 
+;; Debugger interface
+(use-package gdb-mi
+  :custom
+  (gud-gdb-command-name *gdb-binary*))
+
 ;; Insert Guards
 (defun insert-guards (guard-name)
   "Insert correctly formatted header guards in the file
@@ -534,9 +568,9 @@ must be installed at a minimum."
     ;; Add bounding 'H' characters to make the macro more unique
     (setq guard-name (format "H_%s_H" (upcase guard-name)))
   (save-excursion
-    (beginning-of-buffer)
+    (goto-char (point-min))
     (insert (format "#ifndef %s\n#define %s\n\n\n" guard-name guard-name))
-    (end-of-buffer)
+    (goto-char (point-max))
     (insert (format "\n\n#endif /* %s */\n" guard-name)))
   ;; Center the point in between the guards if the window was empty.
   (when (<= (point) 2) (move-to-window-line 4))
@@ -547,7 +581,5 @@ must be installed at a minimum."
 
 
 ;;;
-;;; Section managed by `customize' will be appended here
+;;; A section managed by `customize' will be appended here
 ;;;
-
-

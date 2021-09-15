@@ -9,6 +9,8 @@
 ;; 2. LaTeX support (AUCTeX?)
 ;; 3. EXWM support: automatically activated if no WM is found (of course,Linux only)
 ;; 4. all-the-icons
+;; 5. more modern scrolling (`scroll-conservatively' set to high values etc.)
+;;    but I've grown to like the default behavior too
 
 
 ;;;
@@ -77,8 +79,8 @@
 	 (new-height (cadddr workarea))
 	 (top-left-x (+ (car workarea) (/ (- (caddr workarea) new-width) 2)))
 	 (top-left-y (cadr workarea)))
-	 (set-frame-size (window-frame) new-width new-height t)
-	 (set-frame-position (window-frame) top-left-x top-left-y))) ; TODO: it doesn't take the right fringe into account
+    (set-frame-position (window-frame) top-left-x top-left-y)
+    (set-frame-size (window-frame) new-width new-height t))) ; TODO: it doesn't take the fringes into account
 
 
 ;;;
@@ -111,7 +113,7 @@
 
 
 ;; Set the heap threshold for garbage collection
-(setq gc-cons-threshold *gc-bytes*)
+(customize-set-variable 'gc-cons-threshold *gc-bytes*)
 
 ;; Server configuration
 (use-package server
@@ -135,7 +137,7 @@
 (bind-key "s-=" #'text-scale-increase)
 (bind-key "s--" #'text-scale-decrease)
 
-;; Window resizing, Mac-specific. On Linux I configure equivalent DE shortcuts instead
+;; Window resizing, Mac-specific (untested on Linux DEs)
 (when (equal window-system 'ns)
   (bind-key "s-f" #'toggle-frame-fullscreen)
   (unbind-key "s-m")
@@ -156,6 +158,10 @@
 
 ;; Replace/delete the active region when keys/backspace are pressed
 (delete-selection-mode)
+
+;; Follow symlinks when calling find-file (useful for git awareness)
+(customize-set-variable 'find-file-visit-truename t)
+
 
 ;; Quicken many confirmation prompts
 (defalias 'yes-or-no-p 'y-or-n-p)
@@ -178,18 +184,21 @@
 			'unspecified) "Avoids a warning")
   (dired-listing-switches (if (eq system-type 'gnu/linux)
 			      "-lahF --group-directories-first"
-			    "-lahF") "Group directories when using coreutils ls")
+			    "-lahF")
+			  "ls -l readability adjustments. Group directories first when using coreutils ls")
   (dired-ls-F-marks-symlinks t "Rename symlinks correctly, if when marked with '@' by ls -lF"))
 
 ;; Org customization
 (use-package org-mode
+  :custom
+  (org-hide-emphasis-markers t)
   :hook
   (org-mode . visual-line-mode))
 
 ;; Activate Help windows as they are opened
 (use-package help
   :custom
-  (help-window-select t "Switch to help window automatically"))
+  (help-window-select t "Switch focus to a help window automatically, when created"))
 
 ;; GUI browser configuration
 (use-package browse-url
@@ -203,7 +212,7 @@
 
 
 ;; Resize window pixel-wise with mouse
-(customize-save-variable 'frame-resize-pixelwise t)
+(customize-set-variable 'frame-resize-pixelwise t)
 
 ;; Replace the default scratch message
 (use-package startup
@@ -222,7 +231,7 @@
 
 ;; Custom face tweaks
 ;;
-;; 1. For most people, it will suffice using `customize' on the `default' face,
+;; 1. For most people, it will suffice using `customize on the `default' face,
 ;;    WITHOUT changing foreground and background colors, and then apply a theme.
 ;;
 ;; 2. `Info-quoted' and `info-menu-header' have messed up defaults as of version 27.2.
@@ -346,6 +355,9 @@
   :config
   (counsel-mode)
   :bind
+  ;; The following replaces the simple Ivy narrowing of the native M-x,
+  ;; visualizing keybindings, adding more Hydra actions etc.
+  ("M-x" . counsel-M-x)
   ;; The following show previews of the buffer while browsing the list
   ;; (compared to ivy-switch-buffer and ivy-switch-buffer-other-window)
   ("C-x C-b" . counsel-switch-buffer)
@@ -361,7 +373,7 @@
   :config
   (prescient-persist-mode))
 
-;; Interface between the Prescient engine and Ivy
+;; Interface to use the Prescient engine rankings with Ivy
 (use-package ivy-prescient
   :ensure t
   :config
@@ -556,9 +568,9 @@ must be installed at a minimum."
     ;; Add bounding 'H' characters to make the macro more unique
     (setq guard-name (format "H_%s_H" (upcase guard-name)))
   (save-excursion
-    (beginning-of-buffer)
+    (goto-char (point-min))
     (insert (format "#ifndef %s\n#define %s\n\n\n" guard-name guard-name))
-    (end-of-buffer)
+    (goto-char (point-max))
     (insert (format "\n\n#endif /* %s */\n" guard-name)))
   ;; Center the point in between the guards if the window was empty.
   (when (<= (point) 2) (move-to-window-line 4))
@@ -569,7 +581,7 @@ must be installed at a minimum."
 
 
 ;;;
-;;; Section managed by `customize' will be appended here
+;;; A section managed by `customize' will be appended here
 ;;;
 
 
@@ -578,10 +590,59 @@ must be installed at a minimum."
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- '(frame-resize-pixelwise t))
+ '(compilation-message-face 'default)
+ '(custom-enabled-themes '(leuven))
+ '(custom-safe-themes
+   '("94a94c957cf4a3f8db5f12a7b7e8f3e68f686d76ae8ed6b82bd09f6e6430a32c" "89f545ddc104836b27167696db89b371f23893d5b2f038d43383d877ee678d3d" "d9646b131c4aa37f01f909fbdd5a9099389518eb68f25277ed19ba99adeb7279" "cba5ebfabc6456e4bbd68e0394d176161e1db063c6ca24c23b9828af0bdd7411" default))
+ '(fci-rule-color "#3C3D37")
+ '(find-file-visit-truename t)
+ '(frame-resize-pixelwise t)
+ '(gc-cons-threshold 52428800)
+ '(highlight-changes-colors '("#FD5FF0" "#AE81FF"))
+ '(highlight-tail-colors
+   '(("#3C3D37" . 0)
+     ("#679A01" . 20)
+     ("#4BBEAE" . 30)
+     ("#1DB4D0" . 50)
+     ("#9A8F21" . 60)
+     ("#A75B00" . 70)
+     ("#F309DF" . 85)
+     ("#3C3D37" . 100)))
+ '(magit-diff-use-overlays nil)
+ '(package-selected-packages
+   '(which-key use-package smex poly-R pdf-tools page-break-lines org-bullets northcode-theme monokai-theme mode-line-bell magit-popup magit lsp-latex lsp-jedi lsp-ivy lorem-ipsum lab-themes julia-mode ivy-rich ivy-prescient ivy-historian ido-vertical-mode graphql gotham-theme gnu-elpa-keyring-update ghub fill-column-indicator expand-region ess ein ebib diminish dashboard dash-functional cyberpunk-2019-theme creamsody-theme counsel company-jedi company-irony-c-headers company-irony company-c-headers company-auctex command-log-mode clues-theme ccls beacon async amx ace-jump-buffer))
+ '(pos-tip-background-color "#1A3734")
+ '(pos-tip-foreground-color "#FFFFC8")
+ '(vc-annotate-background nil)
+ '(vc-annotate-color-map
+   '((20 . "#F92672")
+     (40 . "#CF4F1F")
+     (60 . "#C26C0F")
+     (80 . "#E6DB74")
+     (100 . "#AB8C00")
+     (120 . "#A18F00")
+     (140 . "#989200")
+     (160 . "#8E9500")
+     (180 . "#A6E22E")
+     (200 . "#729A1E")
+     (220 . "#609C3C")
+     (240 . "#4E9D5B")
+     (260 . "#3C9F79")
+     (280 . "#A1EFE4")
+     (300 . "#299BA6")
+     (320 . "#2896B5")
+     (340 . "#2790C3")
+     (360 . "#66D9EF")))
+ '(vc-annotate-very-old-color nil)
+ '(weechat-color-list
+   '(unspecified "#272822" "#3C3D37" "#F70057" "#F92672" "#86C30D" "#A6E22E" "#BEB244" "#E6DB74" "#40CAE4" "#66D9EF" "#FB35EA" "#FD5FF0" "#74DBCD" "#A1EFE4" "#F8F8F2" "#F8F8F0")))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- )
+ '(default ((t (:inherit nil :extend nil :stipple nil :inverse-video nil :box nil :strike-through nil :overline nil :underline nil :slant normal :weight normal :height 180 :width normal :family "Monaco"))))
+ '(Info-quoted ((t (:inherit default :underline t))))
+ '(custom-variable-obsolete ((t (:inherit custom-variable-tag :strike-through t :weight normal))))
+ '(info-menu-header ((t (:weight bold :family "Sans Serif"))))
+ '(line-number ((t (:inherit (shadow default) :height 0.8)))))

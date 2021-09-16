@@ -176,9 +176,7 @@
   (require 'dired-x)
   :custom
   (dired-auto-revert-buffer t "Refresh the dired buffer whenever unburied")
-  (dired-use-ls-dired (if (eq system-type 'darwin)
-			  nil
-			'unspecified) "Avoids a warning")
+  (dired-use-ls-dired (if (eq system-type 'gnu/linux) 'unspecified) "nil on Macs to avoid a warning")
   (dired-listing-switches (if (eq system-type 'gnu/linux)
 			      "-lahF --group-directories-first"
 			    "-lahF")

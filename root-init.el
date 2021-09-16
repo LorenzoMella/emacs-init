@@ -37,7 +37,7 @@
 (ido-mode)
 (ido-everywhere)
 
-(if (boundp 'fido-mode)	; fido is just icomplete with ido bahvior (introduced in Emacs 27?)
+(if (boundp 'fido-mode)	; fido is just icomplete with ido behavior (introduced in Emacs 27?)
     (fido-mode)
   (icomplete-mode))
 
@@ -55,7 +55,8 @@
 (require 'dired-x)
 (customize-set-variable 'dired-auto-revert-buffer t
 			"Refresh the dired buffer whenever unburied")
-(customize-set-variable 'dired-use-ls-dired 'unspecified
+(customize-set-variable 'dired-use-ls-dired
+			(if (eq system-type 'gnu/linux) 'unspecified)
 			"Avoids a warning")
 (customize-set-variable 'dired-listing-switches
 			(if (eq system-type 'gnu/linux)
@@ -63,7 +64,7 @@
 			  "-lahF")
 			"ls -l readability adjustments. Group directories first when using coreutils ls")
 (customize-set-variable 'dired-ls-F-marks-symlinks t
-			"Rename symlinks correctly, if when marked with '@' by ls -lF")
+			"Rename symlinks correctly when marked with '@' by ls -lF")
 
 ;; Programming modes
 

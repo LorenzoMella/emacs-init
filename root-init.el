@@ -13,8 +13,14 @@
 (customize-set-variable 'find-file-visit-truename t
 			"When opening symlinks, associate the linked-file filename to the buffer")
 
-(customize-set-variable help-window-select t
+(customize-set-variable 'help-window-select t
 			"Switch focus to a help window automatically, when created")
+
+;; Time display on the mode-line
+
+(customize-set-variable 'display-time-day-and-date t)
+(customize-set-variable 'display-time-interval 1) ; every second
+(display-time-mode)
 
 ;; Better general-purpose keybindings
 
@@ -26,19 +32,20 @@
 (global-set-key [remap downcase-word] #'downcase-dwim)
 (global-set-key [remap upcase-word] #'upcase-dwim)
 
-;; Ido and Fido narrowing
+;; Ido and Fido/iComplete narrowing
 
 (ido-mode)
 (ido-everywhere)
 
-(if (boundp 'fido-mode)	; fido is a recent customization of icomplete which follows ido conventions more
+(if (boundp 'fido-mode)	; fido is just icomplete with ido bahvior (introduced in Emacs 27?)
     (fido-mode)
   (icomplete-mode))
 
-(customize-set-variable 'ido-decorations '("" "" "\n" " | ..."
+(customize-set-variable 'ido-decorations '("\n-> " "" "\n" " | ..."
 					   "[" "]" " [No match]"
 					   " [Matched]" " [Not readable]"
-					   " [Too big]" " [Confirm]"))
+					   " [Too big]" " [Confirm]"
+					   " [" "]"))
 
 (define-key ido-common-completion-map (kbd "C-n") #'ido-next-match)
 (define-key ido-common-completion-map (kbd "C-p") #'ido-prev-match)
@@ -62,8 +69,8 @@
 
 (dolist (mode '(subword-mode
 		show-paren-mode
-		(if (string> (emacs-version) "25") ; display-line-numbers replaces linum starting from Emacs 26.1
-		    display-line-numbers-mode
-		  linum-mode)
+		(if (string< emacs-version "26.1")
+		    linum-mode ; display-line-numbers replaces linum starting from Emacs 26.1
+		  display-line-numbers-mode)
 		electric-pair-local-mode))
   (add-hook 'prog-mode-hook mode))

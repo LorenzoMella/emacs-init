@@ -31,23 +31,23 @@
 ;;     [[ $CANDIDATE ]] && which $CANDIDATE
 ;;   done")
 
-(defvar-local *gdb-binary* "/opt/local/bin/ggdb"
+(defvar-local *gdb-binary* "/usr/bin/gdb"
   "gdb executable to use with gdb and gud.")
 
-(defvar-local *shell-binary* "/bin/bash"
+(defvar-local *shell-binary* (getenv "SHELL")
   "Preferred shell to use with ansi-term.")
 
-(defvar-local *python-interpreter-binary* "/opt/local/bin/python3"
+(defvar-local *python-interpreter-binary* "/usr/bin/python3"
   "Path to the preferred python or ipython interpreter.")
 
 (defvar-local *ein-image-viewer* "/bin/feh --image-bg white"
   "Image viewing program used by the ein package (with arguments).")
 
 (defvar-local *jedi-language-server-bin-path*
-  (expand-file-name "~/Library/Python/3.9/bin/jedi-language-server")
+  (expand-file-name "/usr/bin/jedi-language-server")
   "Path to the jedi-language-server executable.")
 
-(defvar-local *ccls-bin-path* "/opt/local/bin/ccls-clang-8.0"
+(defvar-local *ccls-bin-path* "/usr/bin/ccls"
   "Path to the ccls executable.")
 
 (defvar-local *initial-scratch-message*
@@ -69,11 +69,9 @@
   (interactive)
   (find-file-existing user-init-file))
 
-(defun frame-resize-and-center (&optional width-fraction)
+(defun frame-resize-and-center (width-fraction)
   "Resizes the frame to about two thirds of the screen."
   (interactive (list 0.618)) ; Using the inverted golden ratio in place of 2/3
-  (unless (boundp 'width-fraction)
-    (setq width-fraction 0.618))
   (let* ((workarea (alist-get 'workarea (car (display-monitor-attributes-list))))
 	 (new-width (floor (* (caddr workarea) width-fraction)))
 	 (new-height (cadddr workarea))
@@ -137,12 +135,11 @@
 (bind-key "s-=" #'text-scale-increase)
 (bind-key "s--" #'text-scale-decrease)
 
-;; Window resizing, Mac-specific (untested on Linux DEs)
-(when (equal window-system 'ns)
-  (bind-key "s-f" #'toggle-frame-fullscreen)
-  (unbind-key "s-m")
-  (bind-key "s-m m" #'toggle-frame-maximized)
-  (bind-key "s-m c" #'frame-resize-and-center))
+;; Window resizing
+(bind-key "s-f" #'toggle-frame-fullscreen)
+(unbind-key "s-m")
+(bind-key "s-m m" #'toggle-frame-maximized)
+(bind-key "s-m c" #'frame-resize-and-center)
 
 ;; Remap keys to more convenient commands
 (bind-key [remap kill-buffer] #'kill-current-buffer)
@@ -196,9 +193,8 @@
   (org-mode . visual-line-mode))
 
 ;; Activate Help windows as they are opened
-(use-package help
-  :custom
-  (help-window-select t "Switch focus to a help window automatically, when created"))
+(customize-set-variable 'help-window-select t
+			"Switch focus to a help window automatically, when created")
 
 ;; GUI browser configuration
 (use-package browse-url
@@ -211,17 +207,20 @@
 ;;;
 
 
+;; Visual replacement for the beep warning sound
+(customize-set-variable 'visible-bell t)
+
 ;; Resize window pixel-wise with mouse
 (customize-set-variable 'frame-resize-pixelwise t)
 
 ;; Replace the default scratch message
-(use-package startup
-  :defer
-  :custom
-  (initial-scratch-message *initial-scratch-message*))
+(customize-set-variable 'initial-scratch-message *initial-scratch-message*)
 
 ;; Convert non-visible ^L (form feed) into a horizontal line
-(global-page-break-lines-mode)
+(use-package page-break-lines
+  :ensure t
+  :config
+  (global-page-break-lines-mode))
 
 ;; hl-line-mode in selected bundled modes
 (use-package hl-line

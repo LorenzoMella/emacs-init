@@ -41,8 +41,8 @@
     (fido-mode)
   (icomplete-mode))
 
-(customize-set-variable 'ido-decorations '("\n-> " "" "\n" " | ..."
-					   "[" "]" " [No match]"
+(customize-set-variable 'ido-decorations '("\n-> " "" "\n" ""
+					   " [" "]" " [No match]"
 					   " [Matched]" " [Not readable]"
 					   " [Too big]" " [Confirm]"
 					   " [" "]"))
@@ -68,10 +68,10 @@
 
 ;; Programming modes
 
-(dolist (mode '(subword-mode
-		show-paren-mode
-		(if (string< emacs-version "26.1")
-		    linum-mode ; display-line-numbers replaces linum starting from Emacs 26.1
-		  display-line-numbers-mode)
-		electric-pair-local-mode))
+(dolist (mode (list #'subword-mode
+		    #'show-paren-mode
+		    (if (version< emacs-version "26.1")
+			#'linum-mode ; display-line-numbers optionally replaces linum starting from Emacs 26.1
+		      #'display-line-numbers-mode)
+		    #'electric-pair-local-mode))
   (add-hook 'prog-mode-hook mode))

@@ -44,7 +44,7 @@
   "Image viewing program used by the ein package (with arguments).")
 
 (defvar-local *jedi-language-server-bin-path*
-  (expand-file-name "/usr/bin/jedi-language-server")
+  (expand-file-name "~/.local/bin/jedi-language-server")
   "Path to the jedi-language-server executable.")
 
 (defvar-local *ccls-bin-path* "/usr/bin/ccls"
@@ -193,6 +193,11 @@
 ;; Activate Help windows as they are opened
 (customize-set-variable 'help-window-select t
 			"Switch focus to a help window automatically, when created")
+
+;; Activate Man windows as they are opened
+(use-package man
+  :custom
+  (Man-notify-method 'aggressive))
 
 ;; GUI browser configuration
 (use-package browse-url

@@ -9,7 +9,8 @@
 ;; 2. LaTeX support (AUCTeX?)
 ;; 3. EXWM support: automatically activated if no WM is found (of course,Linux only)
 ;; 4. all-the-icons
-
+;; 5. more modern scrolling (`scroll-conservatively' set to high values etc.)
+;;    but I've grown to like the default behavior too
 
 
 ;;;
@@ -21,7 +22,7 @@
   "Preferred heap threshold size to start garbage collection.")
 
 (defvar-local *preferred-browser* #'browse-url-default-browser
-  "The browser used by browse-url.")
+  "Any one of the browser symbols defined by the browse-url package.")
 
 ;; Little bash script to find all candidates for a binary (e.g., ccls)
 ;; (shell-command
@@ -30,20 +31,23 @@
 ;;     [[ $CANDIDATE ]] && which $CANDIDATE
 ;;   done")
 
-(defvar-local *shell-binary* "/bin/bash"
+(defvar-local *gdb-binary* "/usr/bin/gdb"
+  "gdb executable to use with gdb and gud.")
+
+(defvar-local *shell-binary* (getenv "SHELL")
   "Preferred shell to use with ansi-term.")
 
-(defvar-local *python-interpreter-binary* "python3"
+(defvar-local *python-interpreter-binary* "/usr/bin/python3"
   "Path to the preferred python or ipython interpreter.")
 
 (defvar-local *ein-image-viewer* "/bin/feh --image-bg white"
   "Image viewing program used by the ein package (with arguments).")
 
 (defvar-local *jedi-language-server-bin-path*
-  (expand-file-name "jedi-language-server")
+  (expand-file-name "~/.local/bin/jedi-language-server")
   "Path to the jedi-language-server executable.")
 
-(defvar-local *ccls-bin-path* "ccls"
+(defvar-local *ccls-bin-path* "/usr/bin/ccls"
   "Path to the ccls executable.")
 
 (defvar-local *initial-scratch-message*
@@ -56,7 +60,7 @@
 
 
 ;;;
-;;; Shortcut to this init file
+;;; General purpose custom functions
 ;;;
 
 
@@ -64,6 +68,17 @@
   "Opens the configuration file currently defined as `user-init-file'."
   (interactive)
   (find-file-existing user-init-file))
+
+(defun frame-resize-and-center (width-fraction)
+  "Resizes the frame to about two thirds of the screen."
+  (interactive (list 0.618)) ; Using the inverted golden ratio in place of 2/3
+  (let* ((workarea (alist-get 'workarea (car (display-monitor-attributes-list))))
+	 (new-width (floor (* (caddr workarea) width-fraction)))
+	 (new-height (cadddr workarea))
+	 (top-left-x (+ (car workarea) (/ (- (caddr workarea) new-width) 2)))
+	 (top-left-y (cadr workarea)))
+    (set-frame-position (window-frame) top-left-x top-left-y)
+    (set-frame-size (window-frame) new-width new-height t))) ; TODO: it doesn't take the fringes into account
 
 
 ;;;
@@ -96,7 +111,7 @@
 
 
 ;; Set the heap threshold for garbage collection
-(setq gc-cons-threshold *gc-bytes*)
+(customize-set-variable 'gc-cons-threshold *gc-bytes*)
 
 ;; Server configuration
 (use-package server
@@ -120,10 +135,11 @@
 (bind-key "s-=" #'text-scale-increase)
 (bind-key "s--" #'text-scale-decrease)
 
-;; Window resizing, Mac-specific. On Linux I configure equivalent DE shortcuts instead
-(when (equal window-system 'ns)
-  (bind-key "s-f" #'toggle-frame-fullscreen)
-  (bind-key "s-m" #'toggle-frame-maximized))
+;; Window resizing
+(bind-key "s-f" #'toggle-frame-fullscreen)
+(unbind-key "s-m")
+(bind-key "s-m m" #'toggle-frame-maximized)
+(bind-key "s-m c" #'frame-resize-and-center)
 
 ;; Remap keys to more convenient commands
 (bind-key [remap kill-buffer] #'kill-current-buffer)
@@ -139,6 +155,10 @@
 
 ;; Replace/delete the active region when keys/backspace are pressed
 (delete-selection-mode)
+
+;; Follow symlinks when calling find-file (useful for git awareness)
+(customize-set-variable 'find-file-visit-truename t)
+
 
 ;; Quicken many confirmation prompts
 (defalias 'yes-or-no-p 'y-or-n-p)
@@ -156,23 +176,28 @@
   (require 'dired-x)
   :custom
   (dired-auto-revert-buffer t "Refresh the dired buffer whenever unburied")
-  (dired-use-ls-dired (if (eq system-type 'darwin)
-			  nil
-			'unspecified) "Avoids a warning")
+  (dired-use-ls-dired (if (eq system-type 'gnu/linux) 'unspecified) "nil on Macs to avoid a warning")
   (dired-listing-switches (if (eq system-type 'gnu/linux)
 			      "-lahF --group-directories-first"
-			    "-lahF") "Group directories when using coreutils ls")
+			    "-lahF")
+			  "ls -l readability adjustments. Group directories first when using coreutils ls")
   (dired-ls-F-marks-symlinks t "Rename symlinks correctly, if when marked with '@' by ls -lF"))
 
 ;; Org customization
 (use-package org-mode
+  :custom
+  (org-hide-emphasis-markers t)
   :hook
   (org-mode . visual-line-mode))
 
 ;; Activate Help windows as they are opened
-(use-package help
+(customize-set-variable 'help-window-select t
+			"Switch focus to a help window automatically, when created")
+
+;; Activate Man windows as they are opened
+(use-package man
   :custom
-  (help-window-select t "Switch to help window automatically"))
+  (Man-notify-method 'aggressive))
 
 ;; GUI browser configuration
 (use-package browse-url
@@ -185,14 +210,20 @@
 ;;;
 
 
+;; Visual replacement for the beep warning sound
+(customize-set-variable 'visible-bell t)
+
+;; Resize window pixel-wise with mouse
+(customize-set-variable 'frame-resize-pixelwise t)
+
 ;; Replace the default scratch message
-(use-package startup
-  :defer
-  :custom
-  (initial-scratch-message *initial-scratch-message*))
+(customize-set-variable 'initial-scratch-message *initial-scratch-message*)
 
 ;; Convert non-visible ^L (form feed) into a horizontal line
-(global-page-break-lines-mode)
+(use-package page-break-lines
+  :ensure t
+  :config
+  (global-page-break-lines-mode))
 
 ;; hl-line-mode in selected bundled modes
 (use-package hl-line
@@ -202,7 +233,7 @@
 
 ;; Custom face tweaks
 ;;
-;; 1. For most people, it will suffice using `customize' on the `default' face,
+;; 1. For most people, it will suffice using `customize on the `default' face,
 ;;    WITHOUT changing foreground and background colors, and then apply a theme.
 ;;
 ;; 2. `Info-quoted' and `info-menu-header' have messed up defaults as of version 27.2.
@@ -326,6 +357,9 @@
   :config
   (counsel-mode)
   :bind
+  ;; The following replaces the simple Ivy narrowing of the native M-x,
+  ;; visualizing keybindings, adding more Hydra actions etc.
+  ("M-x" . counsel-M-x)
   ;; The following show previews of the buffer while browsing the list
   ;; (compared to ivy-switch-buffer and ivy-switch-buffer-other-window)
   ("C-x C-b" . counsel-switch-buffer)
@@ -341,7 +375,7 @@
   :config
   (prescient-persist-mode))
 
-;; Interface between the Prescient engine and Ivy
+;; Interface to use the Prescient engine rankings with Ivy
 (use-package ivy-prescient
   :ensure t
   :config
@@ -424,11 +458,11 @@ must be installed at a minimum."
   :custom
   (ess-use-ido nil)
   (ess-style 'RStudio)
-  :bind
-  (:map ess-mode-map ; FIX: somehow opening an .r file requires ess-mode-map before loading the package
-	("C-c h" . ess-help)
-	("C-c r" . rmarkdown-render)
-	("C->" . insert-pipe)))
+  :config
+  (with-eval-after-load 'ess-r-mode
+    (bind-key "C-c h" #'ess-help ess-r-mode-map)
+    (bind-key "C-c r" #'rmarkdown-render ess-r-mode-map)
+    (bind-key "C->" #'insert-pipe ess-r-mode-map)))
 
 ;; Poly-R: R-Markdown support based on poly-mode
 (use-package poly-R
@@ -517,6 +551,11 @@ must be installed at a minimum."
   :custom
   (ccls-executable *ccls-bin-path*))
 
+;; Debugger interface
+(use-package gdb-mi
+  :custom
+  (gud-gdb-command-name *gdb-binary*))
+
 ;; Insert Guards
 (defun insert-guards (guard-name)
   "Insert correctly formatted header guards in the file
@@ -531,9 +570,9 @@ must be installed at a minimum."
     ;; Add bounding 'H' characters to make the macro more unique
     (setq guard-name (format "H_%s_H" (upcase guard-name)))
   (save-excursion
-    (beginning-of-buffer)
+    (goto-char (point-min))
     (insert (format "#ifndef %s\n#define %s\n\n\n" guard-name guard-name))
-    (end-of-buffer)
+    (goto-char (point-max))
     (insert (format "\n\n#endif /* %s */\n" guard-name)))
   ;; Center the point in between the guards if the window was empty.
   (when (<= (point) 2) (move-to-window-line 4))
@@ -544,24 +583,5 @@ must be installed at a minimum."
 
 
 ;;;
-;;; Section managed by `customize' will be appended here
+;;; A section managed by `customize' will be appended here
 ;;;
-
-
-(custom-set-variables
- ;; custom-set-variables was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- '(package-selected-packages
-   '(which-key vterm use-package smooth-scroll smex poly-R org-bullets northcode-theme monokai-theme mode-line-bell magit lsp-jedi lorem-ipsum lab-themes julia-mode ivy-rich ivy-prescient ivy-historian ido-vertical-mode ido-completing-read+ gnu-elpa-keyring-update fill-column-indicator expand-region ess ein ebib diminish dashboard creamsody-theme counsel company-shell company-jedi company-irony-c-headers company-irony company-c-headers company-auctex command-log-mode ccls beacon amx ace-jump-buffer)))
-(custom-set-faces
- ;; custom-set-faces was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- '(default ((t (:inherit nil :stipple nil :inverse-video nil :box nil :strike-through nil :overline nil :underline nil :slant normal :weight normal :height 160 :width normal :family "Monaco"))))
- '(Info-quoted ((t (:inherit default :underline t))))
- '(custom-variable-obsolete ((t (:inherit custom-variable-tag :strike-through t :weight normal))))
- '(info-menu-header ((t (:weight bold :family "Sans Serif"))))
- '(line-number ((t (:inherit (shadow default) :height 0.8)))))

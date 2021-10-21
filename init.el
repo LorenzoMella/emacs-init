@@ -177,10 +177,7 @@
 ;; GUI browser configuration
 (use-package browse-url
   :custom
-  (browse-url-browser-function		; Somehow, default browser
-   (if (and (eq system-type 'gnu/linux) (file-exists-p *preferred-browser*))
-       browse-url-epiphany
-     browse-url-default-browser)))
+  (browse-url-browser-function *preferred-browser*))
 
 
 ;;;
@@ -273,7 +270,7 @@
   (dashboard-startup-banner 'logo "Load alternative logo")
   (dashboard-set-footer nil)
   :hook
-  (dashboard-mode . hl-line-mode)
+  (dashboard-after-initialize . hl-line-mode)
   ;; Reposition the cursor when Emacs is initially run
   (dashboard-after-initialize . dashboard-jump-to-recent-files)
   ;; Reposition the cursor after resizing the frame
@@ -551,3 +548,20 @@ must be installed at a minimum."
 ;;;
 
 
+(custom-set-variables
+ ;; custom-set-variables was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ '(package-selected-packages
+   '(which-key vterm use-package smooth-scroll smex poly-R org-bullets northcode-theme monokai-theme mode-line-bell magit lsp-jedi lorem-ipsum lab-themes julia-mode ivy-rich ivy-prescient ivy-historian ido-vertical-mode ido-completing-read+ gnu-elpa-keyring-update fill-column-indicator expand-region ess ein ebib diminish dashboard creamsody-theme counsel company-shell company-jedi company-irony-c-headers company-irony company-c-headers company-auctex command-log-mode ccls beacon amx ace-jump-buffer)))
+(custom-set-faces
+ ;; custom-set-faces was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ '(default ((t (:inherit nil :stipple nil :inverse-video nil :box nil :strike-through nil :overline nil :underline nil :slant normal :weight normal :height 160 :width normal :family "Monaco"))))
+ '(Info-quoted ((t (:inherit default :underline t))))
+ '(custom-variable-obsolete ((t (:inherit custom-variable-tag :strike-through t :weight normal))))
+ '(info-menu-header ((t (:weight bold :family "Sans Serif"))))
+ '(line-number ((t (:inherit (shadow default) :height 0.8)))))

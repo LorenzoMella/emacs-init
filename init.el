@@ -31,7 +31,7 @@
 ;;     [[ $CANDIDATE ]] && which $CANDIDATE
 ;;   done")
 
-(defvar-local *gdb-binary* "/opt/local/bin/ggdb"
+(defvar-local *gdb-binary* "/usr/bin/gdb"
   "gdb executable to use with gdb and gud.")
 
 (defvar-local *shell-binary* (getenv "SHELL")
@@ -72,11 +72,9 @@
   (interactive)
   (find-file-existing user-init-file))
 
-(defun frame-resize-and-center (&optional width-fraction)
+(defun frame-resize-and-center (width-fraction)
   "Resizes the frame to about two thirds of the screen."
   (interactive (list 0.618)) ; Using the inverted golden ratio in place of 2/3
-  (unless (boundp 'width-fraction)
-    (setq width-fraction 0.618))
   (let* ((workarea (alist-get 'workarea (car (display-monitor-attributes-list))))
 	 (new-width (floor (* (caddr workarea) width-fraction)))
 	 (new-height (cadddr workarea))
@@ -140,12 +138,11 @@
 (bind-key "s-=" #'text-scale-increase)
 (bind-key "s--" #'text-scale-decrease)
 
-;; Window resizing, Mac-specific (untested on Linux DEs)
-(when (equal window-system 'ns)
-  (bind-key "s-f" #'toggle-frame-fullscreen)
-  (unbind-key "s-m")
-  (bind-key "s-m m" #'toggle-frame-maximized)
-  (bind-key "s-m c" #'frame-resize-and-center))
+;; Window resizing
+(bind-key "s-f" #'toggle-frame-fullscreen)
+(unbind-key "s-m")
+(bind-key "s-m m" #'toggle-frame-maximized)
+(bind-key "s-m c" #'frame-resize-and-center)
 
 ;; Remap keys to more convenient commands
 (bind-key [remap kill-buffer] #'kill-current-buffer)
@@ -180,9 +177,7 @@
   (require 'dired-x)
   :custom
   (dired-auto-revert-buffer t "Refresh the dired buffer whenever unburied")
-  (dired-use-ls-dired (if (eq system-type 'darwin)
-			  nil
-			'unspecified) "Avoids a warning")
+  (dired-use-ls-dired (if (eq system-type 'gnu/linux) 'unspecified) "nil on Macs to avoid a warning")
   (dired-listing-switches (if (eq system-type 'gnu/linux)
 			      "-lahF --group-directories-first"
 			    "-lahF")
@@ -197,9 +192,13 @@
   (org-mode . visual-line-mode))
 
 ;; Activate Help windows as they are opened
-(use-package help
+(customize-set-variable 'help-window-select t
+			"Switch focus to a help window automatically, when created")
+
+;; Activate Man windows as they are opened
+(use-package man
   :custom
-  (help-window-select t "Switch focus to a help window automatically, when created"))
+  (Man-notify-method 'aggressive))
 
 ;; GUI browser configuration
 (use-package browse-url
@@ -212,23 +211,31 @@
 ;;;
 
 
+;; Visual replacement for the beep warning sound
+(customize-set-variable 'visible-bell t)
+
 ;; Resize window pixel-wise with mouse
 (customize-set-variable 'frame-resize-pixelwise t)
 
 ;; Replace the default scratch message
-(use-package startup
-  :defer
-  :custom
-  (initial-scratch-message *initial-scratch-message*))
+(customize-set-variable 'initial-scratch-message *initial-scratch-message*)
 
 ;; Convert non-visible ^L (form feed) into a horizontal line
-(global-page-break-lines-mode)
+(use-package page-break-lines
+  :ensure t
+  :config
+  (global-page-break-lines-mode))
 
 ;; hl-line-mode in selected bundled modes
 (use-package hl-line
   :hook
   (package-menu-mode . hl-line-mode)
   (org-agenda-mode . hl-line-mode))
+
+;; FIX: ansi-color
+
+(use-package ansi-color
+  :ensure t)
 
 ;; Custom face tweaks
 ;;
@@ -306,7 +313,7 @@
   (dashboard-startup-banner 'logo "Load alternative logo")
   (dashboard-set-footer nil)
   :hook
-  (dashboard-mode . hl-line-mode)
+  (dashboard-after-initialize . hl-line-mode)
   ;; Reposition the cursor when Emacs is initially run
   (dashboard-after-initialize . dashboard-jump-to-recent-files)
   ;; Reposition the cursor after resizing the frame
@@ -586,13 +593,20 @@ must be installed at a minimum."
   (when (or (null (buffer-file-name)) (not (string-match "\\.[hH]$" (buffer-file-name))))
     (message "Are you editing a header file (C/C++/Objective-C)?")))
 
+;; Guile support
 
+(use-package geiser
+  :ensure t)
+
+(use-package geiser-guile
+  :ensure t)
+
+(use-package sicp
+  :ensure t)
 
 ;;;
 ;;; A section managed by `customize' will be appended here
 ;;;
-
-
 (custom-set-variables
  ;; custom-set-variables was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
@@ -610,51 +624,30 @@ must be installed at a minimum."
  '(find-file-visit-truename t)
  '(frame-resize-pixelwise t)
  '(gc-cons-threshold 52428800)
- '(highlight-changes-colors '("#FD5FF0" "#AE81FF"))
- '(highlight-tail-colors
-   '(("#3C3D37" . 0)
-     ("#679A01" . 20)
-     ("#4BBEAE" . 30)
-     ("#1DB4D0" . 50)
-     ("#9A8F21" . 60)
-     ("#A75B00" . 70)
-     ("#F309DF" . 85)
-     ("#3C3D37" . 100)))
- '(magit-diff-use-overlays nil)
+ '(help-window-select t)
+ '(initial-scratch-message
+   ";;                              __       __
+;;   __/|____________________ _/ /______/ /_  __/|_
+;;  |    / ___/ ___/ ___/ __ `/ __/ ___/ __ \\|    /
+;; /_ __(__  ) /__/ /  / /_/ / /_/ /__/ / / /_ __|
+;;  |/ /____/\\___/_/   \\__,_/\\__/\\___/_/ /_/ |/
+
+
+")
  '(package-selected-packages
-   '(which-key use-package smex poly-R pdf-tools page-break-lines org-bullets northcode-theme monokai-theme mode-line-bell magit-popup magit lsp-latex lsp-jedi lsp-ivy lorem-ipsum lab-themes julia-mode ivy-rich ivy-prescient ivy-historian ido-vertical-mode graphql gotham-theme gnu-elpa-keyring-update ghub fill-column-indicator expand-region ess ein ebib diminish dashboard dash-functional cyberpunk-2019-theme creamsody-theme counsel company-jedi company-irony-c-headers company-irony company-c-headers company-auctex command-log-mode clues-theme ccls beacon async amx ace-jump-buffer))
- '(pos-tip-background-color "#1A3734")
- '(pos-tip-foreground-color "#FFFFC8")
- '(vc-annotate-background nil)
- '(vc-annotate-color-map
-   '((20 . "#F92672")
-     (40 . "#CF4F1F")
-     (60 . "#C26C0F")
-     (80 . "#E6DB74")
-     (100 . "#AB8C00")
-     (120 . "#A18F00")
-     (140 . "#989200")
-     (160 . "#8E9500")
-     (180 . "#A6E22E")
-     (200 . "#729A1E")
-     (220 . "#609C3C")
-     (240 . "#4E9D5B")
-     (260 . "#3C9F79")
-     (280 . "#A1EFE4")
-     (300 . "#299BA6")
-     (320 . "#2896B5")
-     (340 . "#2790C3")
-     (360 . "#66D9EF")))
- '(vc-annotate-very-old-color nil)
- '(weechat-color-list
-   '(unspecified "#272822" "#3C3D37" "#F70057" "#F92672" "#86C30D" "#A6E22E" "#BEB244" "#E6DB74" "#40CAE4" "#66D9EF" "#FB35EA" "#FD5FF0" "#74DBCD" "#A1EFE4" "#F8F8F2" "#F8F8F0")))
+   '(sicp geiser-guile geiser which-key vterm use-package smooth-scroll smex poly-R page-break-lines org-bullets northcode-theme monokai-theme mode-line-bell magit lsp-jedi lorem-ipsum lab-themes julia-mode ivy-rich ivy-prescient ivy-historian ido-vertical-mode ido-completing-read+ gnu-elpa-keyring-update fill-column-indicator expand-region ess ein ebib diminish dashboard creamsody-theme counsel company-shell company-jedi company-irony-c-headers company-irony company-c-headers company-auctex command-log-mode ccls beacon async amx ace-jump-buffer))
+ '(visible-bell t))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- '(default ((t (:inherit nil :extend nil :stipple nil :inverse-video nil :box nil :strike-through nil :overline nil :underline nil :slant normal :weight normal :height 180 :width normal :family "Monaco"))))
+ '(default ((t (:inherit nil :extend nil :stipple nil :inverse-video nil :box nil :strike-through nil :overline nil :underline nil :slant normal :weight normal :height 150 :width normal :family "Monaco"))))
  '(Info-quoted ((t (:inherit default :underline t))))
  '(custom-variable-obsolete ((t (:inherit custom-variable-tag :strike-through t :weight normal))))
  '(info-menu-header ((t (:weight bold :family "Sans Serif"))))
- '(line-number ((t (:inherit (shadow default) :height 0.8)))))
+ '(line-number ((t (:inherit (shadow default) :height 0.8))))
+ '(org-block ((t (:inherit shadow :extend t :background "#242424"))))
+ '(org-level-1 ((t (:inherit outline-1 :extend nil :background "#152741" :overline nil))))
+ '(org-level-2 ((t (:inherit outline-2 :extend nil :background "#450075"))))
+ '(org-todo ((t (:background "systemGrayColor" :foreground "#B0412A" :box (:line-width 1 :color "systemGrayColor" :style released-button) :weight bold)))))

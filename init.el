@@ -34,21 +34,24 @@
 (defvar-local *gdb-binary* "/opt/local/bin/ggdb"
   "gdb executable to use with gdb and gud.")
 
-(defvar-local *shell-binary* "/bin/bash"
+(defvar-local *shell-binary* (getenv "SHELL")
   "Preferred shell to use with ansi-term.")
+
+(defvar-local *pdflatex-binary* "/Library/TeX/texbin/pdflatex"
+  "Path to pdflatex renderer")
 
 (defvar-local *python-interpreter-binary* "/opt/local/bin/python3"
   "Path to the preferred python or ipython interpreter.")
 
-(defvar-local *ein-image-viewer* "/bin/feh --image-bg white"
-  "Image viewing program used by the ein package (with arguments).")
-
-(defvar-local *jedi-language-server-bin-path*
+(defvar-local *jedi-language-server-binary*
   (expand-file-name "~/Library/Python/3.9/bin/jedi-language-server")
   "Path to the jedi-language-server executable.")
 
-(defvar-local *ccls-bin-path* "/opt/local/bin/ccls-clang-8.0"
+(defvar-local *ccls-binary* "/opt/local/bin/ccls-clang-8.0"
   "Path to the ccls executable.")
+
+(defvar-local *ein-image-viewer* "/bin/feh --image-bg white"
+  "Image viewing program used by the ein package (with arguments).")
 
 (defvar-local *initial-scratch-message*
   ";;                              __       __
@@ -147,8 +150,7 @@
 ;; Remap keys to more convenient commands
 (bind-key [remap kill-buffer] #'kill-current-buffer)
 (bind-key [remap kill-buffer] #'quit-window ; Never kill *scratch* by accident
-	  lisp-interaction-mode-map	    ; FIX: *scratch* can be used with other major modes!!
-	  (string-equal (buffer-name) "*scratch*"))
+	  lisp-interaction-mode-map (string-equal (buffer-name) "*scratch*"))
 (bind-key [remap capitalize-word] #'capitalize-dwim)
 (bind-key [remap downcase-word] #'downcase-dwim)
 (bind-key [remap upcase-word] #'upcase-dwim)
@@ -161,7 +163,6 @@
 
 ;; Follow symlinks when calling find-file (useful for git awareness)
 (customize-set-variable 'find-file-visit-truename t)
-
 
 ;; Quicken many confirmation prompts
 (defalias 'yes-or-no-p 'y-or-n-p)
@@ -270,6 +271,12 @@
   shell-name)
 
 (advice-add 'ansi-term :filter-args 'lm/default-shell-name)
+
+;; Set the environment locale in case Emacs defaults to nil or "C" (this may happen on MacOS)
+(dolist (env-var '("LANG" "LC_CTYPE" "LC_COLLATE" "LC_TIME" "LC_MESSAGES" "LC_MONETARY"))
+  (let (locale (getenv env-var))
+    (when (or (null locale) (string= locale "C"))
+      (setenv env-var "en_US.UTF-8"))))
 
 
 ;;;
@@ -436,18 +443,19 @@
 ;; ESS - Emacs Speaks Statistics: R and R Markdown suite
 
 ;; Automate the pdf rendering of rmarkdown projects
-(defun rmarkdown-render (filename)
+(defun rmarkdown-render (filename &optional verbose)
   "Run rmarkdown::render on the chosen file.
 R and the rmarkdown package, and appropriate renderers,
 must be installed at a minimum."
-  (interactive "File to render: ")
+  (interactive "FFile to render: ")
   (message "Rendering file \"%s\"..." filename)
   (shell-command
-   (format "Rscript -e \"rmarkdown::render('%s')\" > /dev/null" filename))
+   (format "Rscript -e \"rmarkdown::render('%s')\" > /dev/null; %s %s.tex > /dev/null"
+	   filename *pdflatex-binary* (file-name-sans-extension filename)))
   (message "... done!"))
 
 (defun insert-pipe ()
-  "Insert the pipe (%%>%%) operator at point, as defined by the Tidyverse magrittr package."
+  "Insert the pipe (%%>%%) operator at point, as defined by the magrittr package."
   (interactive)
   (insert "%>% "))
 
@@ -492,7 +500,7 @@ must be installed at a minimum."
   (add-to-list 'lsp-enabled-clients 'jedi)
   (add-to-list 'lsp-disabled-clients 'pyls) ; Avoid using Palantir's backend if installed
   :custom
-  (lsp-jedi-executable-command *jedi-language-server-bin-path*))
+  (lsp-jedi-executable-command *jedi-language-server-binary*))
 
 ;; EIN: Jupyter support
 (use-package ein
@@ -547,7 +555,7 @@ must be installed at a minimum."
   :init
   (add-to-list 'lsp-enabled-clients 'ccls)
   :custom
-  (ccls-executable *ccls-bin-path*))
+  (ccls-executable *ccls-binary*))
 
 ;; Debugger interface
 (use-package gdb-mi
@@ -590,10 +598,14 @@ must be installed at a minimum."
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
+ '(ansi-color-faces-vector
+   [default default default italic underline success warning error])
+ '(ansi-color-names-vector
+   ["#3C3836" "#FB4933" "#86C9D3" "#8DD1CA" "#419BB0" "#A59FC0" "#3FD7E5" "#EBDBB2"])
  '(compilation-message-face 'default)
  '(custom-enabled-themes '(leuven))
  '(custom-safe-themes
-   '("94a94c957cf4a3f8db5f12a7b7e8f3e68f686d76ae8ed6b82bd09f6e6430a32c" "89f545ddc104836b27167696db89b371f23893d5b2f038d43383d877ee678d3d" "d9646b131c4aa37f01f909fbdd5a9099389518eb68f25277ed19ba99adeb7279" "cba5ebfabc6456e4bbd68e0394d176161e1db063c6ca24c23b9828af0bdd7411" default))
+   '("10a31b6c251640d04b2fa74bd2c05aaaee915cbca6501bcc82820cdc177f5a93" "94a94c957cf4a3f8db5f12a7b7e8f3e68f686d76ae8ed6b82bd09f6e6430a32c" "89f545ddc104836b27167696db89b371f23893d5b2f038d43383d877ee678d3d" "d9646b131c4aa37f01f909fbdd5a9099389518eb68f25277ed19ba99adeb7279" "cba5ebfabc6456e4bbd68e0394d176161e1db063c6ca24c23b9828af0bdd7411" default))
  '(fci-rule-color "#3C3D37")
  '(find-file-visit-truename t)
  '(frame-resize-pixelwise t)

@@ -231,6 +231,11 @@
   (package-menu-mode . hl-line-mode)
   (org-agenda-mode . hl-line-mode))
 
+;; FIX: ansi-color
+
+(use-package ansi-color
+  :ensure t)
+
 ;; Custom face tweaks
 ;;
 ;; 1. For most people, it will suffice using `customize on the `default' face,
@@ -580,8 +585,55 @@ must be installed at a minimum."
   (when (or (null (buffer-file-name)) (not (string-match "\\.[hH]$" (buffer-file-name))))
     (message "Are you editing a header file (C/C++/Objective-C)?")))
 
+;; Guile support
 
+(use-package geiser
+  :ensure t)
+
+(use-package geiser-guile
+  :ensure t)
+
+(use-package sicp
+  :ensure t)
 
 ;;;
 ;;; A section managed by `customize' will be appended here
 ;;;
+(custom-set-variables
+ ;; custom-set-variables was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ '(custom-enabled-themes '(northcode))
+ '(custom-safe-themes
+   '("10a31b6c251640d04b2fa74bd2c05aaaee915cbca6501bcc82820cdc177f5a93" default))
+ '(find-file-visit-truename t)
+ '(frame-resize-pixelwise t)
+ '(gc-cons-threshold 52428800)
+ '(help-window-select t)
+ '(initial-scratch-message
+   ";;                              __       __
+;;   __/|____________________ _/ /______/ /_  __/|_
+;;  |    / ___/ ___/ ___/ __ `/ __/ ___/ __ \\|    /
+;; /_ __(__  ) /__/ /  / /_/ / /_/ /__/ / / /_ __|
+;;  |/ /____/\\___/_/   \\__,_/\\__/\\___/_/ /_/ |/
+
+
+")
+ '(package-selected-packages
+   '(sicp geiser-guile geiser which-key vterm use-package smooth-scroll smex poly-R page-break-lines org-bullets northcode-theme monokai-theme mode-line-bell magit lsp-jedi lorem-ipsum lab-themes julia-mode ivy-rich ivy-prescient ivy-historian ido-vertical-mode ido-completing-read+ gnu-elpa-keyring-update fill-column-indicator expand-region ess ein ebib diminish dashboard creamsody-theme counsel company-shell company-jedi company-irony-c-headers company-irony company-c-headers company-auctex command-log-mode ccls beacon async amx ace-jump-buffer))
+ '(visible-bell t))
+(custom-set-faces
+ ;; custom-set-faces was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ '(default ((t (:inherit nil :extend nil :stipple nil :inverse-video nil :box nil :strike-through nil :overline nil :underline nil :slant normal :weight normal :height 150 :width normal :family "Monaco"))))
+ '(Info-quoted ((t (:inherit default :underline t))))
+ '(custom-variable-obsolete ((t (:inherit custom-variable-tag :strike-through t :weight normal))))
+ '(info-menu-header ((t (:weight bold :family "Sans Serif"))))
+ '(line-number ((t (:inherit (shadow default) :height 0.8))))
+ '(org-block ((t (:inherit shadow :extend t :background "#242424"))))
+ '(org-level-1 ((t (:inherit outline-1 :extend nil :background "#152741" :overline nil))))
+ '(org-level-2 ((t (:inherit outline-2 :extend nil :background "#450075"))))
+ '(org-todo ((t (:background "systemGrayColor" :foreground "#B0412A" :box (:line-width 1 :color "systemGrayColor" :style released-button) :weight bold)))))

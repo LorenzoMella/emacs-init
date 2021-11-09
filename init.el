@@ -290,7 +290,7 @@
   (dashboard-startup-banner 'logo "Load alternative logo")
   (dashboard-set-footer nil)
   :hook
-  (dashboard-mode . hl-line-mode)
+  (dashboard-after-initialize . hl-line-mode)
   ;; Reposition the cursor when Emacs is initially run
   (dashboard-after-initialize . dashboard-jump-to-recent-files)
   ;; Reposition the cursor after resizing the frame
@@ -487,8 +487,6 @@ Detects whether a Python virtual environment is present in the current
 buffer directory and prompts the user for activation."
   (let ((proj-name (file-name-base (directory-file-name default-directory)))
 	(activate-script-file (expand-file-name "./bin/activate")))
-    (message "%s %s %s" proj-name activate-script-file
-	     (file-exists-p activate-script-file))
     (if (and (file-exists-p activate-script-file)
 	     (y-or-n-p "Virtual environment detected. Activate? "))
 	(progn (pyvenv-mode)
@@ -580,6 +578,9 @@ buffer directory and prompts the user for activation."
   (when (or (null (buffer-file-name)) (not (string-match "\\.[hH]$" (buffer-file-name))))
     (message "Are you editing a header file (C/C++/Objective-C)?")))
 
+
+;; Guile support
+
 (use-package geiser
   :ensure t)
 
@@ -594,37 +595,3 @@ buffer directory and prompts the user for activation."
 ;;;
 ;;; A section managed by `customize' will be appended here
 ;;;
-(custom-set-variables
- ;; custom-set-variables was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- '(ansi-color-faces-vector
-   [default default default italic underline success warning error])
- '(custom-enabled-themes '(misterioso))
- '(find-file-visit-truename t)
- '(frame-resize-pixelwise t)
- '(gc-cons-threshold 52428800)
- '(help-window-select t)
- '(initial-scratch-message
-   ";;                              __       __
-;;   __/|____________________ _/ /______/ /_  __/|_
-;;  |    / ___/ ___/ ___/ __ `/ __/ ___/ __ \\|    /
-;; /_ __(__  ) /__/ /  / /_/ / /_/ /__/ / / /_ __|
-;;  |/ /____/\\___/_/   \\__,_/\\__/\\___/_/ /_/ |/
-
-
-")
- '(package-selected-packages
-   '(pyvenv sicp geiser-guile geiser yasnippet which-key use-package poly-R page-break-lines org-bullets magit lsp-jedi lorem-ipsum ivy-prescient gnu-elpa-keyring-update ess ein diminish dashboard counsel company-jedi company-c-headers ccls avy))
- '(visible-bell t))
-(custom-set-faces
- ;; custom-set-faces was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- '(default ((t (:inherit nil :extend nil :stipple nil :inverse-video nil :box nil :strike-through nil :overline nil :underline nil :slant normal :weight normal :height 160 :width normal :family "Hack"))))
- '(Info-quoted ((t (:inherit default :underline t))))
- '(custom-variable-obsolete ((t (:inherit custom-variable-tag :strike-through t :weight normal))))
- '(info-menu-header ((t (:weight bold :family "Sans Serif"))))
- '(line-number ((t (:inherit (shadow default) :height 0.8)))))

@@ -24,28 +24,17 @@
 (defvar-local *preferred-browser* #'browse-url-default-browser
   "Any one of the browser symbols defined by the browse-url package.")
 
-;; Little bash script to find all candidates for a binary (e.g., ccls)
-;; (shell-command
-;;  "for TOKEN in ${PATH//:/ }; do
-;;     [[ -d $TOKEN ]] && CANDIDATE=$(ls $TOKEN | grep ccls)
-;;     [[ $CANDIDATE ]] && which $CANDIDATE
-;;   done")
-
-(defvar-local *gdb-binary* "/usr/bin/gdb"
-  "gdb executable to use with gdb and gud.")
-
 (defvar-local *shell-binary* (getenv "SHELL")
   "Preferred shell to use with ansi-term.")
 
-(defvar-local *python-interpreter-binary* "/usr/bin/python3"
-  "Path to the preferred python or ipython interpreter.")
+(defvar-local *python-interpreter-binary* "python3"
+  "Preferred python or ipython interpreter.")
 
 (defvar-local *ein-image-viewer* "/bin/feh --image-bg white"
   "Image viewing program used by the ein package (with arguments).")
 
-(defvar-local *jedi-language-server-bin-path*
-  (expand-file-name "~/.local/bin/jedi-language-server")
-  "Path to the jedi-language-server executable.")
+(defvar-local *gdb-binary* "/usr/bin/gdb"
+  "gdb executable to use with gdb and gud.")
 
 (defvar-local *ccls-bin-path* "/usr/bin/ccls"
   "Path to the ccls executable.")
@@ -433,7 +422,10 @@
   :commands lsp
   :hook
   ((c-mode c++-mode python-mode) . lsp)
-  (lsp-mode . lsp-enable-which-key-integration))
+  (lsp-mode . lsp-enable-which-key-integration)
+  :config
+  (add-to-list 'lsp-enabled-clients 'ccls)
+  (add-to-list 'lsp-enabled-clients 'pylsp))
 
 ;; ESS - Emacs Speaks Statistics: R and R Markdown suite
 
@@ -449,7 +441,7 @@ must be installed at a minimum."
   (message "... done!"))
 
 (defun insert-pipe ()
-  "Insert the pipe (%%>%%) operator at point, as defined by the Tidyverse magrittr package."
+  "Insert the pipe (%>%) operator at point, as defined by the Tidyverse magrittr package."
   (interactive)
   (insert "%>% "))
 
@@ -469,34 +461,42 @@ must be installed at a minimum."
   :ensure t
   :after ess)
 
-;; Python configuration and lsp-jedi
+;; Python configuration
 
-'(use-package python
+(use-package python
   :custom
-  (python-shell-interpreter *python-interpreter-binary*))
+  (python-indent-offset 4))
 
 ;; ipython-shell-send: send snippets to inferior IPython shells (I haven't tested it well)
-'(use-package ipython-shell-send
-   :ensure t)
+(use-package ipython-shell-send
+  :ensure t)
 
-;; Company backend for Python using jedi
-(use-package company-jedi
+;; Activate and make the inferior shell aware of virtual environments
+(use-package pyvenv
   :ensure t
-  :after company
-  :config
-  (add-to-list 'company-backends #'company-jedi))
-
-;; Jedi Language Server backend for LSP
-(use-package lsp-jedi
-  :ensure t
-  :after lsp-mode
-  :init
-  (add-to-list 'lsp-enabled-clients 'jedi)
-  (add-to-list 'lsp-disabled-clients 'pyls) ; Avoid using Palantir's backend if installed
   :custom
-  (lsp-jedi-executable-command *jedi-language-server-bin-path*))
+  (pyvenv-exec-shell *shell-binary*)
+  :hook
+  ((python-mode inferior-python-mode) . pyvenv-mode))
 
-;; EIN: Jupyter support
+;; Unused
+(defun lm/pyvenv-propose ()
+  "Managed detection and activation of pyvenv at the user's discretion.
+
+Detects whether a Python virtual environment is present in the current 
+buffer directory and prompts the user for activation."
+  (let ((proj-name (file-name-base (directory-file-name default-directory)))
+	(activate-script-file (expand-file-name "./bin/activate")))
+    (message "%s %s %s" proj-name activate-script-file
+	     (file-exists-p activate-script-file))
+    (if (and (file-exists-p activate-script-file)
+	     (y-or-n-p "Virtual environment detected. Activate? "))
+	(progn (pyvenv-mode)
+	       (pyvenv-activate default-directory)
+	       (message "Virtual environment activated in %s." proj-name))
+      (message "Using Python global environment."))))
+
+;; EIN: Jupyter support (experimental setup: doesn't support lsp)
 (use-package ein
   :ensure t
   :bind
@@ -546,8 +546,8 @@ must be installed at a minimum."
 (use-package ccls
   :ensure t
   :after lsp-mode
-  :init
-  (add-to-list 'lsp-enabled-clients 'ccls)
+  ;; :init
+  ;; (add-to-list 'lsp-enabled-clients 'ccls)
   :custom
   (ccls-executable *ccls-bin-path*))
 
@@ -580,8 +580,51 @@ must be installed at a minimum."
   (when (or (null (buffer-file-name)) (not (string-match "\\.[hH]$" (buffer-file-name))))
     (message "Are you editing a header file (C/C++/Objective-C)?")))
 
+(use-package geiser
+  :ensure t)
 
+(use-package geiser-guile
+  :ensure t
+  :bind (:map scheme-mode-map
+	      ("C-c C-p" . run-geiser)))
+
+(use-package sicp
+  :ensure t)
 
 ;;;
 ;;; A section managed by `customize' will be appended here
 ;;;
+(custom-set-variables
+ ;; custom-set-variables was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ '(ansi-color-faces-vector
+   [default default default italic underline success warning error])
+ '(custom-enabled-themes '(misterioso))
+ '(find-file-visit-truename t)
+ '(frame-resize-pixelwise t)
+ '(gc-cons-threshold 52428800)
+ '(help-window-select t)
+ '(initial-scratch-message
+   ";;                              __       __
+;;   __/|____________________ _/ /______/ /_  __/|_
+;;  |    / ___/ ___/ ___/ __ `/ __/ ___/ __ \\|    /
+;; /_ __(__  ) /__/ /  / /_/ / /_/ /__/ / / /_ __|
+;;  |/ /____/\\___/_/   \\__,_/\\__/\\___/_/ /_/ |/
+
+
+")
+ '(package-selected-packages
+   '(pyvenv sicp geiser-guile geiser yasnippet which-key use-package poly-R page-break-lines org-bullets magit lsp-jedi lorem-ipsum ivy-prescient gnu-elpa-keyring-update ess ein diminish dashboard counsel company-jedi company-c-headers ccls avy))
+ '(visible-bell t))
+(custom-set-faces
+ ;; custom-set-faces was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ '(default ((t (:inherit nil :extend nil :stipple nil :inverse-video nil :box nil :strike-through nil :overline nil :underline nil :slant normal :weight normal :height 160 :width normal :family "Hack"))))
+ '(Info-quoted ((t (:inherit default :underline t))))
+ '(custom-variable-obsolete ((t (:inherit custom-variable-tag :strike-through t :weight normal))))
+ '(info-menu-header ((t (:weight bold :family "Sans Serif"))))
+ '(line-number ((t (:inherit (shadow default) :height 0.8)))))

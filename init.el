@@ -17,6 +17,13 @@
 ;;;
 
 
+;; Little bash script to find all candidates for a binary to prepare the options below
+;; (shell-command
+;;  "for TOKEN in ${PATH//:/ }; do
+;;     [[ -d $TOKEN ]] && CANDIDATE=$(ls $TOKEN | grep <bin-name>)
+;;     [[ $CANDIDATE ]] && which $CANDIDATE
+;;   done")
+
 (defvar-local *gc-bytes* (* 50 1024 1024) ; 50MB
   "Preferred heap threshold size to start garbage collection.")
 

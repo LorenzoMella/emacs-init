@@ -10,7 +10,7 @@
 
    - Autocompletion with [[https://company-mode.github.io/][company]];
 
-   - Support for Microsoft's Language Server Protocol, and its Emacs interface [[https://emacs-lsp.github.io/lsp-mode/][lsp-mode]]. Configured backends: [[https://github.com/MaskRay/emacs-ccls][ccls]] for C/C++ and the Jedi Language Server ([[https://emacs-lsp.github.io/lsp-mode/page/lsp-jedi/][lsp-jedi]]) for Python;
+   - Support for Microsoft's Language Server Protocol, and its Emacs interface [[https://emacs-lsp.github.io/lsp-mode/][lsp-mode]]. Configured backends: [[https://github.com/MaskRay/emacs-ccls][ccls]] for C/C++ and the [[https://github.com/python-lsp/python-lsp-server][Python LSP Server]] for Python;
 
    - Emacs Speaks Statistics ([[https://ess.r-project.org/][ESS]]), the R-Studio quasi-replacement.
 

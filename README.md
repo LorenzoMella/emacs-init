@@ -1,27 +1,27 @@
 
 # Table of Contents
 
-1.  [Emacs Configuration](#org0cf5544)
-    1.  [init.el - the user configuration](#org4302928)
-        1.  [Heavy-handed additions](#orgaf7eb62)
-        2.  [Minor additions](#org9012e3c)
-    2.  [root-init.el - the root-user terminal configuration](#org4b9bc95)
-    3.  [Future plans](#orgeddec46)
+1.  [Emacs Configuration](#org1d4cc9e)
+    1.  [init.el - the user configuration](#org48322b0)
+        1.  [Heavy-handed additions](#org357bac9)
+        2.  [Minor additions](#org731f259)
+    2.  [root-init.el - the root-user terminal configuration](#orge1ba03a)
+    3.  [Future plans](#org1e497e5)
 
 
-<a id="org0cf5544"></a>
+<a id="org1d4cc9e"></a>
 
 # Emacs Configuration
 
 A relatively minimal Emacs configuration.
 
 
-<a id="org4302928"></a>
+<a id="org48322b0"></a>
 
 ## init.el - the user configuration
 
 
-<a id="orgaf7eb62"></a>
+<a id="org357bac9"></a>
 
 ### Heavy-handed additions
 
@@ -29,12 +29,12 @@ A relatively minimal Emacs configuration.
 
 -   Autocompletion with [company](https://company-mode.github.io/);
 
--   Support for Microsoft's Language Server Protocol, and its Emacs interface [lsp-mode](https://emacs-lsp.github.io/lsp-mode/). Configured backends: [ccls](https://github.com/MaskRay/emacs-ccls) for C/C++ and the Jedi Language Server ([lsp-jedi](https://emacs-lsp.github.io/lsp-mode/page/lsp-jedi/)) for Python;
+-   Support for Microsoft's Language Server Protocol, and its Emacs interface [lsp-mode](https://emacs-lsp.github.io/lsp-mode/). Configured backends: [ccls](https://github.com/MaskRay/emacs-ccls) for C/C++ and the [Python LSP Server](https://github.com/python-lsp/python-lsp-server) for Python;
 
 -   Emacs Speaks Statistics ([ESS](https://ess.r-project.org/)), the R-Studio quasi-replacement.
 
 
-<a id="org9012e3c"></a>
+<a id="org731f259"></a>
 
 ### Minor additions
 
@@ -45,7 +45,7 @@ A relatively minimal Emacs configuration.
 -   the [avy](https://github.com/abo-abo/avy) visual text-jumping package.
 
 
-<a id="org4b9bc95"></a>
+<a id="orge1ba03a"></a>
 
 ## root-init.el - the root-user terminal configuration
 
@@ -54,7 +54,7 @@ As such, it is self-contained: it only relies on the packages already included w
 It should be copied or linked as `/root/.emacs.d/init.el`.
 
 
-<a id="orgeddec46"></a>
+<a id="org1e497e5"></a>
 
 ## Future plans
 

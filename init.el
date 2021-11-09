@@ -447,16 +447,21 @@
   ((prog-mode . company-mode)
    (prog-mode . yas-minor-mode)))
 
-;; Emacs support for Microsoft Language Server Protocol
-(use-package lsp-mode
-  :ensure t
-  :commands lsp
-  :hook
-  ((c-mode c++-mode python-mode) . lsp)
-  (lsp-mode . lsp-enable-which-key-integration)
-  :config
-  (add-to-list 'lsp-enabled-clients 'ccls)
-  (add-to-list 'lsp-enabled-clients 'pylsp))
+;; Eglot support for Microsoft Language Server Protocol
+
+(use-package eglot
+  :ensure t)
+
+
+;; (use-package lsp-mode
+;;   :ensure t
+;;   :commands lsp
+;;   :hook
+;;   ((c-mode c++-mode python-mode) . lsp)
+;;   (lsp-mode . lsp-enable-which-key-integration)
+;;   :config
+;;   (add-to-list 'lsp-enabled-clients 'ccls)
+;;   (add-to-list 'lsp-enabled-clients 'pylsp))
 
 ;; ESS - Emacs Speaks Statistics: R and R Markdown suite (FIX: check whether the keymaps are loaded appropriately)
 
@@ -571,9 +576,8 @@ buffer directory and prompts the user for activation."
 ;; ccls: C/C++ backend for LSP
 (use-package ccls
   :ensure t
-  :after lsp-mode
+  :after eglot
   ;; :init
-  ;; (add-to-list 'lsp-enabled-clients 'ccls)
   :custom
   (ccls-executable *ccls-binary*))
 
@@ -632,3 +636,36 @@ buffer directory and prompts the user for activation."
 ;;;
 ;;; A section managed by `customize' will be appended here
 ;;;
+(custom-set-variables
+ ;; custom-set-variables was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ '(custom-enabled-themes '(lab-dark))
+ '(find-file-visit-truename t)
+ '(frame-resize-pixelwise t)
+ '(gc-cons-threshold 52428800)
+ '(initial-scratch-message
+   ";;                              __       __
+;;   __/|____________________ _/ /______/ /_  __/|_
+;;  |    / ___/ ___/ ___/ __ `/ __/ ___/ __ \\|    /
+;; /_ __(__  ) /__/ /  / /_/ / /_/ /__/ / / /_ __|
+;;  |/ /____/\\___/_/   \\__,_/\\__/\\___/_/ /_/ |/
+
+
+")
+ '(package-selected-packages
+   '(pyvenv ipython-shell-send eglot yasnippet which-key use-package tablist sicp seq poly-R parsebib page-break-lines org-bullets northcode-theme monokai-theme magit-popup magit lsp-jedi lorem-ipsum lab-themes ivy-prescient graphql gotham-theme gnu-elpa-keyring-update ghub geiser-guile flx ess ein diminish dashboard dash-functional cyberpunk-2019-theme creamsody-theme counsel company-jedi company-c-headers clues-theme ccls avy auctex async))
+ '(visible-bell t))
+(custom-set-faces
+ ;; custom-set-faces was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ '(default ((t (:inherit nil :extend nil :stipple nil :inverse-video nil :box nil :strike-through nil :overline nil :underline nil :slant normal :weight normal :height 190 :width normal :foundry "nil" :family "Menlo"))))
+ '(Info-quoted ((t (:inherit fixed-pitch-serif :underline t))))
+ '(custom-variable-obsolete ((t (:inherit custom-variable-tag :strike-through t :weight normal))))
+ '(fixed-pitch ((t (:inherit default :family "Menlo"))))
+ '(fixed-pitch-serif ((t (:inherit default :family "Courier"))))
+ '(line-number ((t (:inherit (shadow default) :height 0.8))))
+ '(variable-pitch ((t (:inherit default :family "Helvetica")))))

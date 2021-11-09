@@ -29,6 +29,9 @@
 (defvar-local *python-interpreter-binary* "python3"
   "Preferred python or ipython interpreter.")
 
+(defvar-local *pylsp-binary* "~/Library/Python/3.8/bin/pylsp"
+    "Path to the pylsp executable.")
+
 (defvar-local *additional-texinfo-directories* (list "/opt/local/share/info/")
   "List of the nonstandard texinfo paths")
 
@@ -38,7 +41,7 @@
 (defvar-local *gdb-binary* "/usr/bin/gdb"
   "gdb executable to use with gdb and gud.")
 
-(defvar-local *ccls-binary* "/usr/bin/clang"
+(defvar-local *ccls-binary* "/opt/local/bin/ccls-clang-8.0"
   "Path to the ccls executable.")
 
 (defvar-local *ein-image-viewer* "/bin/feh --image-bg white"
@@ -447,21 +450,13 @@
   ((prog-mode . company-mode)
    (prog-mode . yas-minor-mode)))
 
-;; Eglot support for Microsoft Language Server Protocol
+;; Eglot support for Microsoft's Language Server Protocol (LSP)
 
 (use-package eglot
-  :ensure t)
-
-
-;; (use-package lsp-mode
-;;   :ensure t
-;;   :commands lsp
-;;   :hook
-;;   ((c-mode c++-mode python-mode) . lsp)
-;;   (lsp-mode . lsp-enable-which-key-integration)
-;;   :config
-;;   (add-to-list 'lsp-enabled-clients 'ccls)
-;;   (add-to-list 'lsp-enabled-clients 'pylsp))
+  :ensure t
+  :config
+  (add-to-list 'eglot-server-programs `(c-mode ,*ccls-binary*))
+  (add-to-list 'eglot-server-programs `(python-mode ,*pylsp-binary*)))
 
 ;; ESS - Emacs Speaks Statistics: R and R Markdown suite (FIX: check whether the keymaps are loaded appropriately)
 
@@ -501,6 +496,8 @@ must be installed at a minimum."
 ;; Python configuration
 
 (use-package python
+  :hook
+  (python-mode . eglot-ensure)
   :custom
   (python-indent-offset 4))
 
@@ -577,7 +574,8 @@ buffer directory and prompts the user for activation."
 (use-package ccls
   :ensure t
   :after eglot
-  ;; :init
+  :hook
+  ((c-mode c++-mode) . eglot-ensure)
   :custom
   (ccls-executable *ccls-binary*))
 
@@ -642,6 +640,8 @@ buffer directory and prompts the user for activation."
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
  '(custom-enabled-themes '(lab-dark))
+ '(custom-safe-themes
+   '("13880fa28757754bc40c85b05689c801ddaa877f2fe65abf1779f37776281ef1" default))
  '(find-file-visit-truename t)
  '(frame-resize-pixelwise t)
  '(gc-cons-threshold 52428800)

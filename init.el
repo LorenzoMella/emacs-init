@@ -6,11 +6,10 @@
 ;; TODO:
 ;;
 ;; 1. org-agenda configuration
-;; 2. LaTeX support (AUCTeX?)
-;; 3. EXWM support: automatically activated if no WM is found (of course,Linux only)
-;; 4. all-the-icons
-;; 5. more modern scrolling (`scroll-conservatively' set to high values etc.)
-;;    but I've grown to like the default behavior too
+;; 2. LaTeX support (`AUCTeX', `pdf-tools', `ebib', etc.)
+;; 3. EXWM support: automatically activated if no WM is found (of course, Linux only)
+;; 4. (optional) modern-style scrolling (high value for `scroll-conservatively', etc.)
+;; 5. all-the-icons
 
 
 ;;;
@@ -18,27 +17,30 @@
 ;;;
 
 
+;; Little bash script to find all candidates for a binary to prepare the options below
+;; (shell-command
+;;  "for TOKEN in ${PATH//:/ }; do
+;;     [[ -d $TOKEN ]] && CANDIDATE=$(ls $TOKEN | grep <bin-name>)
+;;     [[ $CANDIDATE ]] && which $CANDIDATE
+;;   done")
+
 (defvar-local *gc-bytes* (* 50 1024 1024) ; 50MB
   "Preferred heap threshold size to start garbage collection.")
 
 (defvar-local *preferred-browser* #'browse-url-default-browser
   "Any one of the browser symbols defined by the browse-url package.")
 
-;; Little bash script to find all candidates for a binary (e.g., ccls)
-;; (shell-command
-;;  "for TOKEN in ${PATH//:/ }; do
-;;     [[ -d $TOKEN ]] && CANDIDATE=$(ls $TOKEN | grep ccls)
-;;     [[ $CANDIDATE ]] && which $CANDIDATE
-;;   done")
+(defvar-local *additional-texinfo-directories* (list "/opt/local/share/info/")
+  "List of the nonstandard texinfo paths")
 
 (defvar-local *gdb-binary* "/usr/bin/gdb"
   "gdb executable to use with gdb and gud.")
 
-(defvar-local *shell-binary* (getenv "SHELL")
+(defvar-local *shell-binary* (getenv "SHELL") ; using the default for the current user
   "Preferred shell to use with ansi-term.")
 
 (defvar-local *pdflatex-binary* "/Library/TeX/texbin/pdflatex"
-  "Path to pdflatex renderer")
+  "Path to the pdflatex renderer")
 
 (defvar-local *python-interpreter-binary* "/opt/local/bin/python3"
   "Path to the preferred python or ipython interpreter.")
@@ -61,6 +63,14 @@
 ;;  |/ /____/\\___/_/   \\__,_/\\__/\\___/_/ /_/ |/\n\n\n"
   "Replacement of the trite *scratch* message with ASCII art.")
 
+;; Face families meant to replace the generic fixed-pitch, fixed-pitch-serif
+;; and variable-pitch defined in face.el (as recommended by the Emacs docs)
+(defvar-local *face-fixed-pitch-family* "Menlo")
+
+(defvar-local *face-fixed-pitch-serif-family* "Courier")
+
+(defvar-local *face-variable-pitch-family* "Helvetica")
+
 
 ;;;
 ;;; General purpose custom functions
@@ -81,7 +91,7 @@
 	 (top-left-x (+ (car workarea) (/ (- (caddr workarea) new-width) 2)))
 	 (top-left-y (cadr workarea)))
     (set-frame-position (window-frame) top-left-x top-left-y)
-    (set-frame-size (window-frame) new-width new-height t))) ; TODO: it doesn't take the fringes into account
+    (set-frame-size (window-frame) new-width new-height t))) ; TODO: somehow it is not centered. Fringes problem?
 
 
 ;;;
@@ -92,9 +102,12 @@
 ;; Load the native package management functionality
 (require 'package)
 
-;; Add references to additional online repositories, besides GNU ELPA
+;; Add references to online repositories other than GNU ELPA
 (add-to-list 'package-archives '("nongnu" . "https://elpa.nongnu.org/nongnu/"))
 (add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/"))
+;; Use the stable Melpa repo (as a replacement for Melpa) for a more curated experience.
+;; I'm not using it in this config because the package ccls is not in Stable yet!
+;; (add-to-list 'package-archives '("s-melpa" . "https://stable.melpa.org/packages/"))
 
 (package-initialize)
 
@@ -191,14 +204,17 @@
   :hook
   (org-mode . visual-line-mode))
 
-;; Activate Help windows as they are opened
-(customize-set-variable 'help-window-select t
-			"Switch focus to a help window automatically, when created")
+;; Help buffer customization
+(use-package help
+  :hook
+  (help-mode . visual-line-mode)
+  :custom
+  (help-window-select t	"Switch focus to a help window automatically, when created"))
 
-;; Activate Man windows as they are opened
+;; Man buffer customization
 (use-package man
   :custom
-  (Man-notify-method 'aggressive))
+  (Man-notify-method 'aggressive "Open Man in another window and switch focus to it"))
 
 ;; GUI browser configuration
 (use-package browse-url
@@ -211,7 +227,8 @@
 ;;;
 
 
-;; Visual replacement for the beep warning sound
+;; System-dependent visual replacement for the beep warning sound
+;; (alternatively, check the mode-line-bell package)
 (customize-set-variable 'visible-bell t)
 
 ;; Resize window pixel-wise with mouse
@@ -227,40 +244,41 @@
   (global-page-break-lines-mode))
 
 ;; hl-line-mode in selected bundled modes
-(use-package hl-line
-  :hook
-  (package-menu-mode . hl-line-mode)
-  (org-agenda-mode . hl-line-mode))
+(add-hook 'package-menu-mode-hook #'hl-line-mode)
+(add-hook 'org-agenda-mode-hook #'hl-line-mode)
 
-;; FIX: ansi-color
+;; Custom face tweaks:
+;;
+;; For most people, it will suffice using `M-x customize-faces' on the `default' face,
+;; (deselect Foreground and Background if active) and then applying a theme.
+;;
+;; 2. However, the standard faces `fixed-pitch', `fixed-pitch-serif' and `variable-pitch',
+;;    inherited by many others, are defined with generic font names, which I modify.
+;;
+;; 3. I reduce the height of `line-number' by 20% for aesthetic reasons.
+;;
+;; 4. I add an underline to `Info-quoted' for greater effect.
+;;
+;; 5. I modify `custom-variable-obsolete' with a strike-through, again, for emphasis.
 
-(use-package ansi-color
-  :ensure t)
-
-;; Custom face tweaks
-;;
-;; 1. For most people, it will suffice using `customize on the `default' face,
-;;    WITHOUT changing foreground and background colors, and then apply a theme.
-;;
-;; 2. `Info-quoted' and `info-menu-header' have messed up defaults as of version 27.2.
-;;    I redefine them in a sane way.
-;;
-;; 3. I modify `custom-variable-obsolete' with a strike-through, for emphasis.
-;;
-;; 4. I reduced the height of `line-number' by 20% for aesthetic reasons.
+(use-package faces
+  :custom-face
+  ;; Commas required for substitutions (where's the backquote? Hidden in use-package custom-face handler)
+  (fixed-pitch ((t (:inherit default :family ,*face-fixed-pitch-family*))))
+  (fixed-pitch-serif ((t (:inherit default :family ,*face-fixed-pitch-serif-family*))))
+  (variable-pitch ((t (:inherit default :family ,*face-variable-pitch-family*))))
+  (line-number ((t (:inherit (shadow default) :height 0.8)))))
 
 (use-package info
   :custom-face
-  (Info-quoted ((t (:inherit default :underline t))))
-  (info-menu-header ((t (:weight bold :family "Sans Serif")))))
+  (Info-quoted ((t (:inherit fixed-pitch-serif :underline t))))
+  :custom
+  (Info-additional-directory-list
+   (append Info-additional-directory-list *additional-texinfo-directories*)))
 
 (use-package cus-edit
   :custom-face
   (custom-variable-obsolete ((t (:inherit custom-variable-tag :strike-through t :weight normal)))))
-
-(use-package faces
-  :custom-face
-  (line-number ((t (:inherit (shadow default) :height 0.8)))))
 
 
 ;;;
@@ -270,17 +288,15 @@
 
 ;; Add local executables (e.g. Python pip installation)
 (setenv "PATH" (concat "~/.local/bin:" (getenv "PATH"))) ; In the actual process environment
-(add-to-list 'exec-path "~/.local/bin")			 ; In the ELisp variable
+(add-to-list 'exec-path "~/.local/bin")			 ; In the Emacs Lisp variable
 
 ;; Automate the interactive shell query of ansi-term
-(defun lm/default-shell-name (shell-name)
-  (interactive (list *shell-binary*))
-  shell-name)
-
-(advice-add 'ansi-term :filter-args 'lm/default-shell-name)
+(advice-add 'ansi-term :filter-args '(lambda (shell-name)
+				       (interactive (list *shell-binary*))
+				       shell-name))
 
 ;; Set the environment locale in case Emacs defaults to nil or "C" (this may happen on MacOS)
-(dolist (env-var '("LANG" "LC_CTYPE" "LC_COLLATE" "LC_TIME" "LC_MESSAGES" "LC_MONETARY"))
+(dolist (env-var '("LANG" "LANGUAGE" "LC_CTYPE" "LC_COLLATE" "LC_TIME" "LC_MESSAGES" "LC_MONETARY"))
   (let (locale (getenv env-var))
     (when (or (null locale) (string= locale "C"))
       (setenv env-var "en_US.UTF-8"))))
@@ -313,11 +329,12 @@
   (dashboard-startup-banner 'logo "Load alternative logo")
   (dashboard-set-footer nil)
   :hook
-  (dashboard-after-initialize . hl-line-mode)
-  ;; Reposition the cursor when Emacs is initially run
-  (dashboard-after-initialize . dashboard-jump-to-recent-files)
-  ;; Reposition the cursor after resizing the frame
+  ;; Hooks effective when dashboard is initially run
+  (dashboard-mode . hl-line-mode)
   (dashboard-mode . dashboard-jump-to-recent-files)
+  ;; Hooks effective after resizing the frame
+  (dashboard-after-initialize . hl-line-mode)
+  (dashboard-after-initialize . dashboard-jump-to-recent-files)
   :bind
   (:map dashboard-mode-map
 	("n" . dashboard-next-line)
@@ -370,7 +387,7 @@
   (counsel-mode)
   :bind
   ;; The following replaces the simple Ivy narrowing of the native M-x,
-  ;; visualizing keybindings, adding more Hydra actions etc.
+  ;; visualizing keybindings and adding more Hydra actions
   ("M-x" . counsel-M-x)
   ;; The following show previews of the buffer while browsing the list
   ;; (compared to ivy-switch-buffer and ivy-switch-buffer-other-window)
@@ -385,6 +402,7 @@
    (expand-file-name
     (format "%s/%s" user-emacs-directory "prescient-save.el")))
   :config
+  ;; Keep the rankings between sessions
   (prescient-persist-mode))
 
 ;; Interface to use the Prescient engine rankings with Ivy
@@ -447,7 +465,7 @@
   ((c-mode c++-mode python-mode) . lsp)
   (lsp-mode . lsp-enable-which-key-integration))
 
-;; ESS - Emacs Speaks Statistics: R and R Markdown suite
+;; ESS - Emacs Speaks Statistics: R and R Markdown suite (FIX: check whether the keymaps are loaded appropriately)
 
 ;; Automate the pdf rendering of rmarkdown projects
 (defun rmarkdown-render (filename &optional verbose)
@@ -509,19 +527,16 @@ must be installed at a minimum."
   :custom
   (lsp-jedi-executable-command *jedi-language-server-binary*))
 
-;; EIN: Jupyter support
+;; EIN: Jupyter support (M-x ein:run to activate the IDE)
 (use-package ein
   :ensure t
-  :bind
-  ("C-c C-j" . ein:run)
   :custom
-  (ein:output-area-inlined-images nil) ; The default, as of =ein= version 05/05/2021
+  (ein:output-area-inlined-images nil)
+  (ein:jupyter-default-kernel *python-interpreter-binary*)
   :init
   (with-eval-after-load 'mailcap	; FIX: probably not portable
     (add-to-list 'mailcap-user-mime-data '((viewer . (concat *ein-image-viewer* " %s"))
-					   (type . "image/png"))))
-  :config
-  (setq ein:jupyter-default-kernel *python-interpreter-binary*))
+					   (type . "image/png")))))
 
 (use-package ein-notebook
   :bind
@@ -532,8 +547,7 @@ must be installed at a minimum."
 
 (use-package ein:notebooklist
   :bind
-  (:map ein:notebooklist
-	("C-c C-k" . ein:stop)))
+  (:map ein:notebooklist ("C-c C-k" . ein:stop))) ; FIX: should be of the form 'C-c [key]'
 
 ;; C/C++ configuration and ccls
 
@@ -593,16 +607,28 @@ must be installed at a minimum."
   (when (or (null (buffer-file-name)) (not (string-match "\\.[hH]$" (buffer-file-name))))
     (message "Are you editing a header file (C/C++/Objective-C)?")))
 
-;; Guile support
+;; Guile-Scheme support
 
 (use-package geiser
-  :ensure t)
+  :ensure t
+  :commands run-geiser)
 
 (use-package geiser-guile
-  :ensure t)
+  :ensure t
+  :after geiser
+  :custom
+  (geiser-debug-jump-to-debug-p nil "Don't jump to the debug buffer")
+  (geiser-debug-show-debug-p nil "Don't show the debug buffer")
+  (geiser-guile-manual-lookup-other-window-p t "Open info entries in another window")
+  :bind
+  (:map scheme-mode-map ("C-c C-p" . run-geiser))) ; in analogy to Python Mode
 
+;; Meme "Wizard Book" in Texinfo format. Read it with `M-x info'.
+;; Also worth checking: a homebrew LaTeX version at: https://github.com/sarabander/sicp-pdf.git
+;; and the original free html format at: https://mitpress.mit.edu/sites/default/files/sicp/index.html
 (use-package sicp
   :ensure t)
+
 
 ;;;
 ;;; A section managed by `customize' will be appended here
@@ -612,15 +638,9 @@ must be installed at a minimum."
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- '(ansi-color-faces-vector
-   [default default default italic underline success warning error])
- '(ansi-color-names-vector
-   ["#3C3836" "#FB4933" "#86C9D3" "#8DD1CA" "#419BB0" "#A59FC0" "#3FD7E5" "#EBDBB2"])
- '(compilation-message-face 'default)
- '(custom-enabled-themes '(leuven))
+ '(custom-enabled-themes '(northcode))
  '(custom-safe-themes
-   '("10a31b6c251640d04b2fa74bd2c05aaaee915cbca6501bcc82820cdc177f5a93" "94a94c957cf4a3f8db5f12a7b7e8f3e68f686d76ae8ed6b82bd09f6e6430a32c" "89f545ddc104836b27167696db89b371f23893d5b2f038d43383d877ee678d3d" "d9646b131c4aa37f01f909fbdd5a9099389518eb68f25277ed19ba99adeb7279" "cba5ebfabc6456e4bbd68e0394d176161e1db063c6ca24c23b9828af0bdd7411" default))
- '(fci-rule-color "#3C3D37")
+   '("10a31b6c251640d04b2fa74bd2c05aaaee915cbca6501bcc82820cdc177f5a93" default))
  '(find-file-visit-truename t)
  '(frame-resize-pixelwise t)
  '(gc-cons-threshold 52428800)
@@ -635,19 +655,17 @@ must be installed at a minimum."
 
 ")
  '(package-selected-packages
-   '(sicp geiser-guile geiser which-key vterm use-package smooth-scroll smex poly-R page-break-lines org-bullets northcode-theme monokai-theme mode-line-bell magit lsp-jedi lorem-ipsum lab-themes julia-mode ivy-rich ivy-prescient ivy-historian ido-vertical-mode ido-completing-read+ gnu-elpa-keyring-update fill-column-indicator expand-region ess ein ebib diminish dashboard creamsody-theme counsel company-shell company-jedi company-irony-c-headers company-irony company-c-headers company-auctex command-log-mode ccls beacon async amx ace-jump-buffer))
+   '(which-key use-package sicp poly-R page-break-lines org-bullets northcode-theme monokai-theme magit-popup magit lsp-jedi lsp-ivy lorem-ipsum lab-themes ivy-prescient graphql gotham-theme gnu-elpa-keyring-update ghub geiser-guile ess ein diminish dashboard dash-functional cyberpunk-2019-theme creamsody-theme counsel company-jedi company-c-headers clues-theme ccls avy async))
  '(visible-bell t))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- '(default ((t (:inherit nil :extend nil :stipple nil :inverse-video nil :box nil :strike-through nil :overline nil :underline nil :slant normal :weight normal :height 150 :width normal :family "Monaco"))))
- '(Info-quoted ((t (:inherit default :underline t))))
+ '(default ((t (:inherit nil :extend nil :stipple nil :inverse-video nil :box nil :strike-through nil :overline nil :underline nil :slant normal :weight normal :height 190 :width normal :family "Menlo"))))
+ '(Info-quoted ((t (:inherit fixed-pitch-serif :underline t))))
  '(custom-variable-obsolete ((t (:inherit custom-variable-tag :strike-through t :weight normal))))
- '(info-menu-header ((t (:weight bold :family "Sans Serif"))))
+ '(fixed-pitch ((t (:inherit default :family "Menlo"))))
+ '(fixed-pitch-serif ((t (:inherit default :family "Courier"))))
  '(line-number ((t (:inherit (shadow default) :height 0.8))))
- '(org-block ((t (:inherit shadow :extend t :background "#242424"))))
- '(org-level-1 ((t (:inherit outline-1 :extend nil :background "#152741" :overline nil))))
- '(org-level-2 ((t (:inherit outline-2 :extend nil :background "#450075"))))
- '(org-todo ((t (:background "systemGrayColor" :foreground "#B0412A" :box (:line-width 1 :color "systemGrayColor" :style released-button) :weight bold)))))
+ '(variable-pitch ((t (:inherit default :family "Helvetica")))))

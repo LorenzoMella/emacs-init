@@ -10,9 +10,13 @@
 
    - Autocompletion with [[https://company-mode.github.io/][company]];
 
-   - Support for Microsoft's Language Server Protocol, and its Emacs interface [[https://emacs-lsp.github.io/lsp-mode/][lsp-mode]]. Configured backends: [[https://github.com/MaskRay/emacs-ccls][ccls]] for C/C++ and the [[https://github.com/python-lsp/python-lsp-server][Python LSP Server]] for Python;
+   - Support for Microsoft's Language Server Protocol, and the [[https://github.com/joaotavora/eglot][eglot]] Emacs interface. Configured backends: [[https://github.com/MaskRay/emacs-ccls][ccls]] for C/C++ and the [[https://github.com/python-lsp/python-lsp-server][Python LSP Server]] for Python;
 
    - Emacs Speaks Statistics ([[https://ess.r-project.org/][ESS]]), the R-Studio quasi-replacement.
+
+   - Support for Python virtual environments, with [[https://github.com/jorgenschaefer/pyvenv][pyvenv.el]].
+
+   - Support for [[https://www.gnu.org/software/guile/][GNU Guile]] through [[https://www.nongnu.org/geiser/][Geiser]].
 
   
 *** Minor additions
@@ -25,9 +29,9 @@
 
 ** root-init.el - the root-user terminal configuration
 
-   This init file is a simple lightweight terminal configuration. The use case I had in mind was a customization suitable for the root user.
+   This init file provides a lightweight terminal-oriented configuration. The use case I had in mind was a customization suitable for system administrators.
    As such, it is self-contained: it only relies on the packages already included with the GNU Emacs installation.
-   It should be copied or linked as ~/root/.emacs.d/init.el~.
+   It should be copied or linked as =/root/.emacs.d/init.el=.
 
 ** Future plans
    

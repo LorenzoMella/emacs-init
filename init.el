@@ -17,19 +17,21 @@
 ;;;
 
 
-(defvar-local *gc-bytes* (* 50 1024 1024) ; 50MB
-  "Preferred heap threshold size to start garbage collection.")
+;; Face families meant to replace the placeholder fonts specified in faces.el
+(defvar-local *face-fixed-pitch-family* "Menlo")
 
-(defvar-local *preferred-browser* #'browse-url-default-browser
-  "Any one of the browser symbols defined by the browse-url package.")
+(defvar-local *face-fixed-pitch-serif-family* "Courier")
 
+(defvar-local *face-variable-pitch-family* "Helvetica")
+
+;; Binaries and paths
 (defvar-local *shell-binary* (getenv "SHELL") ; using the default for the current user
   "Preferred shell to use with ansi-term.")
 
 (defvar-local *python-interpreter-binary* "python3"
   "Preferred python or ipython interpreter.")
 
-(defvar-local *pylsp-binary* "~/Library/Python/3.8/bin/pylsp"
+(defvar-local *pylsp-binary* (expand-file-name "~/Library/Python/3.8/bin/pylsp")
     "Path to the pylsp executable.")
 
 (defvar-local *additional-texinfo-directories* (list "/opt/local/share/info/")
@@ -47,6 +49,16 @@
 (defvar-local *ein-image-viewer* "/bin/feh --image-bg white"
   "Image viewing program used by the ein package (with arguments).")
 
+;; Other settings
+(defvar-local *gc-bytes* (* 50 1024 1024) ; 50MB
+  "Preferred heap threshold size to start garbage collection.")
+
+(defvar-local *transparency-level* 0.97
+  "Global frame transparency parameter (involving both background and text).")
+
+(defvar-local *preferred-browser* #'browse-url-default-browser
+  "Any one of the browser symbols defined by the browse-url package.")
+
 (defvar-local *initial-scratch-message*
   ";;                              __       __
 ;;   __/|____________________ _/ /______/ /_  __/|_
@@ -55,26 +67,18 @@
 ;;  |/ /____/\\___/_/   \\__,_/\\__/\\___/_/ /_/ |/\n\n\n"
   "Replacement of the trite *scratch* message with ASCII art.")
 
-;; Face families meant to replace the generic fixed-pitch, fixed-pitch-serif
-;; and variable-pitch defined in face.el (as recommended by the Emacs docs)
-(defvar-local *face-fixed-pitch-family* "Menlo")
-
-(defvar-local *face-fixed-pitch-serif-family* "Courier")
-
-(defvar-local *face-variable-pitch-family* "Helvetica")
-
 
 ;;;
 ;;; General purpose custom functions
 ;;;
 
 
-(defun custom-settings ()
+(defun lm/custom-settings ()
   "Opens the configuration file currently defined as `user-init-file'."
   (interactive)
   (find-file-existing user-init-file))
 
-(defun frame-resize-and-center (width-fraction)
+(defun lm/frame-resize-and-center (width-fraction)
   "Resizes the frame to about two thirds of the screen."
   (interactive (list 0.618)) ; Using the inverted golden ratio in place of 2/3
   (let* ((workarea (alist-get 'workarea (car (display-monitor-attributes-list))))
@@ -84,6 +88,9 @@
 	 (top-left-y (cadr workarea)))
     (set-frame-position (window-frame) top-left-x top-left-y)
     (set-frame-size (window-frame) new-width new-height t))) ; TODO: somehow it is not centered. Fringes problem?
+
+(defalias 'init-show 'lm/custom-settings)
+(defalias 'custom-settings 'lm/custom-settings)
 
 
 ;;;
@@ -145,9 +152,9 @@
 
 ;; Window resizing
 (bind-key "s-f" #'toggle-frame-fullscreen)
-(unbind-key "s-m")
+(unbind-key "s-m")			; "Iconify Window" on MacOS
 (bind-key "s-m m" #'toggle-frame-maximized)
-(bind-key "s-m c" #'frame-resize-and-center)
+(bind-key "s-m c" #'lm/frame-resize-and-center)
 
 ;; Remap keys to more convenient commands
 (bind-key [remap kill-buffer] #'kill-current-buffer)
@@ -183,18 +190,29 @@
   :custom
   (dired-auto-revert-buffer t "Refresh the dired buffer whenever unburied")
   (dired-use-ls-dired (if (eq system-type 'gnu/linux) 'unspecified) "nil on Macs to avoid a warning")
-  (dired-listing-switches (if (eq system-type 'gnu/linux)
-			      "-lahF --group-directories-first"
-			    "-lahF")
-			  "ls -l readability adjustments. Group directories first when using coreutils ls")
+  (dired-listing-switches
+   (if (eq system-type 'gnu/linux)
+       "-lahF --group-directories-first"
+     "-lahF")
+   "ls -l readability adjustments. Group directories first when using coreutils ls")
   (dired-ls-F-marks-symlinks t "Rename symlinks correctly, if when marked with '@' by ls -lF"))
 
 ;; Org customization
-(use-package org-mode
+(use-package org
   :custom
   (org-hide-emphasis-markers t)
+  (org-ellipsis " ▸")
   :hook
-  (org-mode . visual-line-mode))
+  (org-mode . visual-line-mode)
+  :config
+  (customize-set-variable 'org-structure-template-alist
+			  (append org-structure-template-alist
+				  '(("b" . "src bash") ("conf" . "src conf")
+				    ("el" . "src emacs-lisp") ("py" . "src python")))
+			  "Additional code-block expansions."))
+
+(use-package org-tempo
+  :after org)
 
 ;; Help buffer customization
 (use-package help
@@ -207,6 +225,14 @@
 (use-package man
   :custom
   (Man-notify-method 'aggressive "Open Man in another window and switch focus to it"))
+
+;; Info mode customization
+(use-package info
+  :hook
+  (Info-mode . visual-line-mode)
+  :custom
+  (Info-additional-directory-list
+   (append Info-additional-directory-list *additional-texinfo-directories*)))
 
 ;; GUI browser configuration
 (use-package browse-url
@@ -226,6 +252,10 @@
 ;; Resize window pixel-wise with mouse
 (customize-set-variable 'frame-resize-pixelwise t)
 
+;; Optionally transparent frame
+(customize-set-variable 'default-frame-alist
+			(append default-frame-alist `((alpha . ,*transparency-level*))))
+
 ;; Replace the default scratch message
 (customize-set-variable 'initial-scratch-message *initial-scratch-message*)
 
@@ -240,34 +270,31 @@
   :hook
   ((package-menu-mode org-agenda-mode) . hl-line-mode))
 
+;; Isolate themes not managed by `package' or `use-package' (e.g., user-created ones)
+(let ((theme-directory (expand-file-name (concat user-emacs-directory "/themes"))))
+  (when (file-exists-p theme-directory)
+    (customize-set-variable 'custom-theme-directory theme-directory)))
+
 ;; Custom face tweaks
 ;;
-;; For most people, it will suffice using `M-x customize-faces' on the `default' face,
-;; (deselect Foreground and Background if active) and then applying a theme.
+;; For most people, it will suffice doing `M-x customize-faces' on the `default' face,
+;; (deselect Foreground and Background if active, so they don't interfere with changing the theme)
+;; and then applying a theme.
 ;;
-;; 2. However, the standard faces `fixed-pitch', `fixed-pitch-serif' and `variable-pitch',
-;;    inherited by many others, are defined with generic font names, which I modify.
+;; - However, the standard faces `fixed-pitch', `fixed-pitch-serif' and `variable-pitch',
+;;   inherited by many others, are defined with generic font names, which I modify.
 ;;
-;; 3. I reduce the height of `line-number' by 20% for aesthetic reasons.
+;; - I reduce the height of `line-number' by 20% for aesthetic reasons.
 ;;
-;; 4. I add an underline to `Info-quoted' for greater effect.
-;;
-;; 5. I modify `custom-variable-obsolete' with a strike-through, again, for emphasis.
+;; - I modify `custom-variable-obsolete' with a strike-through, again, for emphasis.
 
 (use-package faces
   :custom-face
   ;; Commas required for substitutions (where's the backquote? Hidden in use-package custom-face handler)
-  (fixed-pitch ((t (:inherit default :family ,*face-fixed-pitch-family*))))
-  (fixed-pitch-serif ((t (:inherit default :family ,*face-fixed-pitch-serif-family*))))
-  (variable-pitch ((t (:inherit default :family ,*face-variable-pitch-family*))))
+  (fixed-pitch ((t (:inherit unspecified :family ,*face-fixed-pitch-family*))))
+  (fixed-pitch-serif ((t (:inherit unspecified :family ,*face-fixed-pitch-serif-family*))))
+  (variable-pitch ((t (:inherit unspecified :family ,*face-variable-pitch-family*))))
   (line-number ((t (:inherit (shadow default) :height 0.8)))))
-
-(use-package info
-  :custom-face
-  (Info-quoted ((t (:inherit fixed-pitch-serif :underline t))))
-  :custom
-  (Info-additional-directory-list
-   (append Info-additional-directory-list *additional-texinfo-directories*)))
 
 (use-package cus-edit
   :custom-face
@@ -280,8 +307,8 @@
 
 
 ;; Add local executables (e.g. Python pip installation)
-(setenv "PATH" (concat "~/.local/bin:" (getenv "PATH"))) ; In the actual process environment
-(add-to-list 'exec-path "~/.local/bin")			 ; In the Emacs Lisp variable
+(setenv "PATH" (concat (expand-file-name "~/.local/bin") ":" (getenv "PATH"))) ; In the actual process environment
+(add-to-list 'exec-path (expand-file-name "~/.local/bin")) ; In the Emacs Lisp variable
 
 ;; Automate the interactive shell query of ansi-term
 (advice-add 'ansi-term :filter-args '(lambda (shell-name)
@@ -352,6 +379,9 @@
 ;; Org Bullets: beautify org headers with circles instead of *
 (use-package org-bullets
   :ensure t
+  :after org
+  :custom
+  (org-bullets-bullet-list '("◉" "●" "○" "⚬"))
   :hook
   (org-mode . org-bullets-mode))
 
@@ -498,35 +528,40 @@ must be installed at a minimum."
 (use-package python
   :hook
   (python-mode . eglot-ensure)
+  (python-mode . lm/venv-create-when-needed)
   :custom
   (python-indent-offset 4))
+
+(defun lm/venv-create-when-needed ()
+  "Create a Python virtual environment in the current directory.
+
+Asks the user if he/she wants to set up a Python virtual environment
+(using venv internally). Asks also for a choice of Python interpreter,
+assuming that the corresponding pip version is installed."
+  (interactive)
+  (when (and (not (file-exists-p "pyvenv.cfg"))
+	     (yes-or-no-p "No Python virtual environment detected. Create? "))
+    (let* ((python-bin-name (read-shell-command "Select Python executable: "
+						*python-interpreter-binary*))
+	   (python-bin (executable-find python-bin-name)))
+      (if (file-exists-p python-bin)
+	  (progn (message "Creating Python virtual environment... ")
+		 (shell-command (format "%s -m venv %s" python-bin default-directory))
+		 (message "Environment created in directory %s" default-directory))
+	(message "Python interpreter %s not found." python-bin)))))
 
 ;; ipython-shell-send: send snippets to inferior IPython shells (I haven't tested it well)
 (use-package ipython-shell-send
   :ensure t)
 
 ;; Activate and make the inferior shell aware of virtual environments
+;; FIX: I don't remember the meaning of hook and shell specifications
 (use-package pyvenv
   :ensure t
   :custom
   (pyvenv-exec-shell *shell-binary*)
   :hook
   ((python-mode inferior-python-mode) . pyvenv-mode))
-
-;; Unused
-(defun lm/pyvenv-propose ()
-  "Managed detection and activation of pyvenv at the user's discretion.
-
-Detects whether a Python virtual environment is present in the current 
-buffer directory and prompts the user for activation."
-  (let ((proj-name (file-name-base (directory-file-name default-directory)))
-	(activate-script-file (expand-file-name "./bin/activate")))
-    (if (and (file-exists-p activate-script-file)
-	     (y-or-n-p "Virtual environment detected. Activate? "))
-	(progn (pyvenv-mode)
-	       (pyvenv-activate default-directory)
-	       (message "Virtual environment activated in %s." proj-name))
-      (message "Using Python global environment."))))
 
 ;; EIN: Jupyter support (experimental setup: doesn't support lsp)
 (use-package ein
@@ -611,8 +646,7 @@ buffer directory and prompts the user for activation."
 ;; Guile-Scheme support
 
 (use-package geiser
-  :ensure t
-  :commands run-geiser)
+  :ensure t)
 
 (use-package geiser-guile
   :ensure t
@@ -634,38 +668,3 @@ buffer directory and prompts the user for activation."
 ;;;
 ;;; A section managed by `customize' will be appended here
 ;;;
-(custom-set-variables
- ;; custom-set-variables was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- '(custom-enabled-themes '(lab-dark))
- '(custom-safe-themes
-   '("13880fa28757754bc40c85b05689c801ddaa877f2fe65abf1779f37776281ef1" default))
- '(find-file-visit-truename t)
- '(frame-resize-pixelwise t)
- '(gc-cons-threshold 52428800)
- '(initial-scratch-message
-   ";;                              __       __
-;;   __/|____________________ _/ /______/ /_  __/|_
-;;  |    / ___/ ___/ ___/ __ `/ __/ ___/ __ \\|    /
-;; /_ __(__  ) /__/ /  / /_/ / /_/ /__/ / / /_ __|
-;;  |/ /____/\\___/_/   \\__,_/\\__/\\___/_/ /_/ |/
-
-
-")
- '(package-selected-packages
-   '(pyvenv ipython-shell-send eglot yasnippet which-key use-package tablist sicp seq poly-R parsebib page-break-lines org-bullets northcode-theme monokai-theme magit-popup magit lsp-jedi lorem-ipsum lab-themes ivy-prescient graphql gotham-theme gnu-elpa-keyring-update ghub geiser-guile flx ess ein diminish dashboard dash-functional cyberpunk-2019-theme creamsody-theme counsel company-jedi company-c-headers clues-theme ccls avy auctex async))
- '(visible-bell t))
-(custom-set-faces
- ;; custom-set-faces was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- '(default ((t (:inherit nil :extend nil :stipple nil :inverse-video nil :box nil :strike-through nil :overline nil :underline nil :slant normal :weight normal :height 190 :width normal :foundry "nil" :family "Menlo"))))
- '(Info-quoted ((t (:inherit fixed-pitch-serif :underline t))))
- '(custom-variable-obsolete ((t (:inherit custom-variable-tag :strike-through t :weight normal))))
- '(fixed-pitch ((t (:inherit default :family "Menlo"))))
- '(fixed-pitch-serif ((t (:inherit default :family "Courier"))))
- '(line-number ((t (:inherit (shadow default) :height 0.8))))
- '(variable-pitch ((t (:inherit default :family "Helvetica")))))

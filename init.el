@@ -53,6 +53,10 @@
 (defvar-local *gc-bytes* (* 50 1024 1024) ; 50MB
   "Preferred heap threshold size to start garbage collection.")
 
+(defvar-local *custom-file-name*
+  (expand-file-name (concat user-emacs-directory "custom-file.el"))
+  "`Customize' will save its settings in this file. Set it to `nil' to append to this file.")
+
 (defvar-local *transparency-level* 0.97
   "Global frame transparency parameter (involving both background and text).")
 
@@ -118,6 +122,12 @@
 ;; Keep ELPA keys up to date
 (use-package  gnu-elpa-keyring-update
   :ensure t)
+
+;;;
+;;; `Customize' setup
+;;;
+
+(setq custom-file *custom-file-name*)
 
 
 ;;;
@@ -666,5 +676,11 @@ assuming that the corresponding pip version is installed."
 
 
 ;;;
-;;; A section managed by `customize' will be appended here
+;;; Insert `Customize' setup
 ;;;
+
+
+(unless (file-exists-p *custom-file-name*)
+  (make-empty-file *custom-file-name*))
+
+(load-file *custom-file-name*)

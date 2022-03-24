@@ -18,33 +18,36 @@
 
 
 ;; Face families meant to replace the placeholder fonts specified in faces.el
-(defvar-local *face-fixed-pitch-family* "Menlo")
+(defvar-local *face-fixed-pitch-family* "Monospace")
 
-(defvar-local *face-fixed-pitch-serif-family* "Courier")
+(defvar-local *face-fixed-pitch-serif-family* "Monospace Serif")
 
-(defvar-local *face-variable-pitch-family* "Helvetica")
+(defvar-local *face-variable-pitch-family* "Sans Serif")
 
 ;; Binaries and paths
 (defvar-local *shell-binary* (getenv "SHELL") ; using the default for the current user
-  "Preferred shell to use with ansi-term.")
+  "Preferred shell to use with term/ansi-term.")
 
 (defvar-local *python-interpreter-binary* "python3"
   "Preferred python or ipython interpreter.")
 
-(defvar-local *pylsp-binary* (expand-file-name "~/Library/Python/3.8/bin/pylsp")
+(defvar-local *pylsp-binary* "pylsp"
     "Path to the pylsp executable.")
-
-(defvar-local *additional-texinfo-directories* (list "/opt/local/share/info/")
-  "List of the nonstandard texinfo paths")
-
-(defvar-local *pdflatex-binary* "/Library/TeX/texbin/pdflatex"
-  "Path to the pdflatex renderer")
 
 (defvar-local *gdb-binary* "/usr/bin/gdb"
   "gdb executable to use with gdb and gud.")
 
-(defvar-local *ccls-binary* "/opt/local/bin/ccls-clang-8.0"
+(defvar-local *ccls-binary* "/usr/bin/ccls"
   "Path to the ccls executable.")
+
+(defvar-local *additional-texinfo-directories* '("/opt/local/share/info/")
+  "List of the nonstandard texinfo paths.")
+
+(defvar-local *texlive-bin-path* "/usr/bin"
+  "Path to the TeXlive binaries.")
+
+(defvar-local *additional-bin-paths* '("~/.local/bin")
+  "List of paths to additional binaries.")
 
 (defvar-local *ein-image-viewer* "/bin/feh --image-bg white"
   "Image viewing program used by the ein package (with arguments).")
@@ -54,8 +57,9 @@
   "Preferred heap threshold size to start garbage collection.")
 
 (defvar-local *custom-file-name*
-  (expand-file-name (concat user-emacs-directory "custom-file.el"))
-  "`Customize' will save its settings in this file. Set it to `nil' to append to this file.")
+  (expand-file-name "custom-file.el" user-emacs-directory)
+  "`Customize' will save its settings in this file. 
+Set it to `nil' to append to this file.")
 
 (defvar-local *transparency-level* 0.97
   "Global frame transparency parameter (involving both background and text).")
@@ -82,6 +86,8 @@
   (interactive)
   (find-file-existing user-init-file))
 
+(defalias 'init-show 'lm/custom-settings)
+
 (defun lm/frame-resize-and-center (width-fraction)
   "Resizes the frame to about two thirds of the screen."
   (interactive (list 0.618)) ; Using the inverted golden ratio in place of 2/3
@@ -91,10 +97,41 @@
 	 (top-left-x (+ (car workarea) (/ (- (caddr workarea) new-width) 2)))
 	 (top-left-y (cadr workarea)))
     (set-frame-position (window-frame) top-left-x top-left-y)
-    (set-frame-size (window-frame) new-width new-height t))) ; TODO: somehow it is not centered. Fringes problem?
+    ;; TODO: somehow it is not centered. Fringes problem
+    (set-frame-size (window-frame) new-width new-height t)))
 
-(defalias 'init-show 'lm/custom-settings)
-(defalias 'custom-settings 'lm/custom-settings)
+(defun lm/cycle-line-wrap-modes ()
+  "Cycles through `visual-line-mode', the simple default line-wrap,
+and line truncation."
+  (interactive)
+  (cond (visual-line-mode
+	 (visual-line-mode -1)
+	 (toggle-truncate-lines -1))
+	(truncate-lines
+	 (visual-line-mode 1)
+	 (message "Visual Line Mode enabled"))
+	(t    ; state here = (not truncate-lines)
+	 (toggle-truncate-lines 1))))
+
+;; TODO: adjust length and use comment-add. Also, instead of just
+;; using the minibuffer, if there is text on the line, embrace it with
+;; comment-start (* (1 + comment-add)) and the rest of the line.
+;; (defun comment-line-separator (section-name)
+;;   (interactive "s")
+;;   (let ((section-comment-start)
+;; 	(cl-reduce (lambda (x y) (concat x y))  comment-add) ))
+;;   (insert
+;;    (format "%s %s %s %s\n"
+;; 	   comment-start
+;; 	   section-name
+;; 	   (make-string
+;; 	    (- fill-column
+;; 	       (length comment-start)
+;; 	       (length section-name)
+;; 	       (length comment-end)
+;; 	       3)
+;; 	    ?-)
+;; 	   comment-end)))
 
 
 ;;;
@@ -123,11 +160,16 @@
 (use-package  gnu-elpa-keyring-update
   :ensure t)
 
+
 ;;;
 ;;; `Customize' setup
 ;;;
 
+
 (setq custom-file *custom-file-name*)
+
+(unless (file-exists-p *custom-file-name*)
+  (make-empty-file *custom-file-name*))
 
 
 ;;;
@@ -159,10 +201,12 @@
 (bind-key "C-M-;" #'comment-line)
 (bind-key "s-=" #'text-scale-increase)
 (bind-key "s--" #'text-scale-decrease)
+(bind-key "s-8" 'iso-transl-ctl-x-8-map key-translation-map) ; Remap the insert-char shortcuts
+(bind-key "s-8 RET" #'insert-char) ; Similar remap of the related `insert-char'
 
 ;; Window resizing
-(bind-key "s-f" #'toggle-frame-fullscreen)
-(unbind-key "s-m")			; "Iconify Window" on MacOS
+(unbind-key "s-m")			; Normally bound to `iconify-frame' on MacOS
+(bind-key "s-m f" #'toggle-frame-fullscreen)
 (bind-key "s-m m" #'toggle-frame-maximized)
 (bind-key "s-m c" #'lm/frame-resize-and-center)
 
@@ -170,9 +214,12 @@
 (bind-key [remap kill-buffer] #'kill-current-buffer)
 (bind-key [remap kill-buffer] #'quit-window ; Never kill *scratch* by accident
 	  lisp-interaction-mode-map (string-equal (buffer-name) "*scratch*"))
-(bind-key [remap capitalize-word] #'capitalize-dwim)
+(bind-key [remap capitalize-word] #'capitalize-dwim) ; the dwim-versions work on regions too
 (bind-key [remap downcase-word] #'downcase-dwim)
 (bind-key [remap upcase-word] #'upcase-dwim)
+
+;; Other keybindings
+(bind-key "s-m `" #'lm/cycle-line-wrap-modes)
 
 ;; Always visualize column numbers
 (column-number-mode)
@@ -189,7 +236,7 @@
 ;; These are for mouse scrolling even when the Emacs frame is
 ;; in the background, to achieve Mac-like behavior
 ;; (works under Gnome 3.x and 40. Untested on other gtk WMs)
-(when (eq system-type 'gnu/linux)
+(when (eq (window-system) 'x)
   (bind-key "<s-mouse-4>" #'mwheel-scroll)
   (bind-key "<s-mouse-5>" #'mwheel-scroll))
 
@@ -210,19 +257,25 @@
 ;; Org customization
 (use-package org
   :custom
-  (org-hide-emphasis-markers t)
   (org-ellipsis " ▸")
+  (org-special-ctrl-a/e t)  ; FIX: it gets overridden by visual-line-mode
   :hook
   (org-mode . visual-line-mode)
   :config
-  (customize-set-variable 'org-structure-template-alist
-			  (append org-structure-template-alist
-				  '(("b" . "src bash") ("conf" . "src conf")
-				    ("el" . "src emacs-lisp") ("py" . "src python")))
-			  "Additional code-block expansions."))
+  ;; Additional code-block expansions
+  (dolist (elem '(("b" . "src bash") ("conf" . "src conf")
+		  ("el" . "src emacs-lisp") ("py" . "src python")))
+    (add-to-list 'org-structure-template-alist elem))
+  ;; Better initial scaling of latex preview rendering in org documents
+  (plist-put org-format-latex-options :scale 2.0))
 
 (use-package org-tempo
-  :after org)
+  :after org
+  :config
+  (dolist (elem '(("t" . "title")
+		  ("n" . "author")
+		  ("d" . "date")))
+    (add-to-list 'org-tempo-keywords-alist elem)))
 
 ;; Help buffer customization
 (use-package help
@@ -249,6 +302,12 @@
   :custom
   (browse-url-browser-function *preferred-browser*))
 
+;; Markdown mode configuration
+
+(use-package markdown-mode
+  :hook
+  (markdown-mode . visual-line-mode))
+
 
 ;;;
 ;;; Aesthetic adjustments
@@ -264,7 +323,12 @@
 
 ;; Optionally transparent frame
 (customize-set-variable 'default-frame-alist
-			(append default-frame-alist `((alpha . ,*transparency-level*))))
+			(append default-frame-alist
+				`((alpha . ,*transparency-level*))))
+
+;; Old-style fullscreen mode on MacOS (i.e., not in its own space, GTK-style)
+(when (equal (window-system) 'ns)
+  (customize-set-variable 'ns-use-native-fullscreen nil))
 
 ;; Replace the default scratch message
 (customize-set-variable 'initial-scratch-message *initial-scratch-message*)
@@ -272,7 +336,7 @@
 ;; Convert non-visible ^L (form feed) into a horizontal line
 (use-package page-break-lines
   :ensure t
-  :config
+  :init
   (global-page-break-lines-mode))
 
 ;; hl-line-mode in selected bundled modes
@@ -281,34 +345,41 @@
   ((package-menu-mode org-agenda-mode) . hl-line-mode))
 
 ;; Isolate themes not managed by `package' or `use-package' (e.g., user-created ones)
-(let ((theme-directory (expand-file-name (concat user-emacs-directory "/themes"))))
+(let ((theme-directory (expand-file-name "themes" user-emacs-directory)))
   (when (file-exists-p theme-directory)
     (customize-set-variable 'custom-theme-directory theme-directory)))
 
 ;; Custom face tweaks
 ;;
-;; For most people, it will suffice doing `M-x customize-faces' on the `default' face,
-;; (deselect Foreground and Background if active, so they don't interfere with changing the theme)
-;; and then applying a theme.
+;; For most people, it will suffice doing `M-x customize-faces' on the
+;; `default' face, (deselect Foreground and Background if active, so
+;; they don't interfere with changing the theme) and then applying a
+;; theme. However,
 ;;
-;; - However, the standard faces `fixed-pitch', `fixed-pitch-serif' and `variable-pitch',
-;;   inherited by many others, are defined with generic font names, which I modify.
-;;
+;; - the standard faces `fixed-pitch', `fixed-pitch-serif' and
+;;   `variable-pitch', inherited by many others, are defined with
+;;   generic font names that don't work everywhere. I customize them.
 ;; - I reduce the height of `line-number' by 20% for aesthetic reasons.
-;;
-;; - I modify `custom-variable-obsolete' with a strike-through, again, for emphasis.
+;; - I modify `custom-variable-obsolete' with a strike-through, again,
+;;   for emphasis.
 
 (use-package faces
   :custom-face
-  ;; Commas required for substitutions (where's the backquote? Hidden in use-package custom-face handler)
-  (fixed-pitch ((t (:inherit unspecified :family ,*face-fixed-pitch-family*))))
-  (fixed-pitch-serif ((t (:inherit unspecified :family ,*face-fixed-pitch-serif-family*))))
-  (variable-pitch ((t (:inherit unspecified :family ,*face-variable-pitch-family*))))
-  (line-number ((t (:inherit (shadow default) :height 0.8)))))
+  ;; Commas required for substitutions (where is the backquote?
+  ;; Hidden in use-package custom-face handler, I presume)
+  (fixed-pitch
+   ((t (:inherit unspecified :family ,*face-fixed-pitch-family*))))
+  (fixed-pitch-serif
+   ((t (:inherit unspecified :family ,*face-fixed-pitch-serif-family*))))
+  (variable-pitch
+   ((t (:inherit unspecified :family ,*face-variable-pitch-family*))))
+  (line-number
+   ((t (:inherit (shadow default) :height 0.8)))))
 
 (use-package cus-edit
   :custom-face
-  (custom-variable-obsolete ((t (:inherit custom-variable-tag :strike-through t :weight normal)))))
+  (custom-variable-obsolete
+   ((t (:inherit custom-variable-tag :strike-through t :weight normal)))))
 
 
 ;;;
@@ -316,17 +387,23 @@
 ;;;
 
 
-;; Add local executables (e.g. Python pip installation)
-(setenv "PATH" (concat (expand-file-name "~/.local/bin") ":" (getenv "PATH"))) ; In the actual process environment
-(add-to-list 'exec-path (expand-file-name "~/.local/bin")) ; In the Emacs Lisp variable
+;; Add additional paths to both the environment variable PATH and the
+;; Emacs exec-path list
+(dolist (path *additional-bin-paths*)
+  (add-to-list 'exec-path (expand-file-name path)))
+(add-to-list 'exec-path (expand-file-name *texlive-bin-path*))
+
+(setenv "PATH" (cl-reduce (lambda (path rest) (concat path ":" rest)) exec-path))
 
 ;; Automate the interactive shell query of ansi-term
 (advice-add 'ansi-term :filter-args '(lambda (shell-name)
 				       (interactive (list *shell-binary*))
 				       shell-name))
 
-;; Set the environment locale in case Emacs defaults to nil or "C" (this may happen on MacOS)
-(dolist (env-var '("LANG" "LANGUAGE" "LC_CTYPE" "LC_COLLATE" "LC_TIME" "LC_MESSAGES" "LC_MONETARY"))
+;; Set the environment locale in case Emacs defaults to nil or "C"
+;; (this may happen on MacOS)
+(dolist (env-var '("LANG" "LANGUAGE" "LC_CTYPE" "LC_COLLATE"
+		   "LC_TIME" "LC_MESSAGES" "LC_MONETARY"))
   (let (locale (getenv env-var))
     (when (or (null locale) (string= locale "C"))
       (setenv env-var "en_US.UTF-8"))))
@@ -356,15 +433,17 @@
   (dashboard-setup-startup-hook)
   :custom
   (dashboard-center-content t)
+  (dashboard-page-separator "\n\f\n")
   (dashboard-startup-banner 'logo "Load alternative logo")
+  (dashboard-items '((recents . 10) (bookmarks . 10) (agenda . 10)))
   (dashboard-set-footer nil)
-  :hook
-  ;; Hooks effective when dashboard is initially run
-  (dashboard-mode . hl-line-mode)
-  (dashboard-mode . dashboard-jump-to-recent-files)
-  ;; Hooks effective after resizing the frame
-  (dashboard-after-initialize . hl-line-mode)
-  (dashboard-after-initialize . dashboard-jump-to-recent-files)
+  :config
+  (with-eval-after-load 'dashboard-widgets
+    ;; Hooks effective after resizing the frame
+    (add-hook 'dashboard-after-initialize-hook #'hl-line-mode)
+    (add-hook 'dashboard-after-initialize-hook #'dashboard-jump-to-recents)
+    (add-hook 'dashboard-mode-hook #'hl-line-mode)
+    (add-hook 'dashboard-mode-hook #'dashboard-jump-to-recents))
   :bind
   (:map dashboard-mode-map
 	("n" . dashboard-next-line)
@@ -376,6 +455,7 @@
   :bind
   ("C-;" . avy-goto-char))
 
+;; Which Key: much needed pop-up help for prefix keymaps
 (use-package which-key
   :ensure t
   :diminish
@@ -465,6 +545,26 @@
    (prog-mode . display-line-numbers-mode)
    (prog-mode . electric-pair-local-mode)))
 
+;; Auto Insert Mode: insert templates in new files
+(use-package autoinsert
+  :config
+  (setq auto-insert-alist
+	(assoc-delete-all "C / C++ header" auto-insert-alist
+			  (lambda (x y) (and (consp x)
+					     (stringp (cdr x))
+					     (string= (cdr x) y)))))
+  (define-auto-insert
+    '("\\.\\([Hh]\\|hh\\|hpp\\|hxx\\|h\\+\\+\\)\\'" . "C / C++ header")
+    '((replace-regexp-in-string
+     "[^A-Z0-9]" "_"
+     (replace-regexp-in-string
+      "\\+" "P"
+      (upcase (file-name-nondirectory buffer-file-name))))
+    "#ifndef H_" str \n
+    "#define H_" str "\n\n"
+    _ "\n\n#endif /* " str " */"))
+  (auto-insert-mode t))
+
 ;; Magit: highly comfy git interface
 (use-package magit
   :ensure t
@@ -498,24 +598,24 @@
   (add-to-list 'eglot-server-programs `(c-mode ,*ccls-binary*))
   (add-to-list 'eglot-server-programs `(python-mode ,*pylsp-binary*)))
 
-;; ESS - Emacs Speaks Statistics: R and R Markdown suite (FIX: check whether the keymaps are loaded appropriately)
+;; ESS - Emacs Speaks Statistics: R and R Markdown suite
+
+(defun insert-pipe ()
+  "Insert the pipe (%>%) operator at point, as defined by the magrittr
+package."
+  (interactive)
+  (insert "%>% "))
 
 ;; Automate the pdf rendering of rmarkdown projects
-(defun rmarkdown-render (filename &optional verbose)
+(defun rmarkdown-render (filename)
   "Run rmarkdown::render on the chosen file.
 R and the rmarkdown package, and appropriate renderers,
 must be installed at a minimum."
   (interactive "FFile to render: ")
   (message "Rendering file \"%s\"..." filename)
-  (shell-command
-   (format "Rscript -e \"rmarkdown::render('%s')\" > /dev/null; %s %s.tex > /dev/null"
-	   filename *pdflatex-binary* (file-name-sans-extension filename)))
+  (async-shell-command
+   (format "Rscript -e \'rmarkdown::render(\"%s\")\'" filename))
   (message "... done!"))
-
-(defun insert-pipe ()
-  "Insert the pipe (%%>%%) operator at point, as defined by the magrittr package."
-  (interactive)
-  (insert "%>% "))
 
 (use-package ess
   :ensure t
@@ -524,9 +624,10 @@ must be installed at a minimum."
   (ess-style 'RStudio)
   :config
   (with-eval-after-load 'ess-r-mode
-    (bind-key "C-c h" #'ess-help ess-r-mode-map)
     (bind-key "C-c r" #'rmarkdown-render ess-r-mode-map)
-    (bind-key "C->" #'insert-pipe ess-r-mode-map)))
+    (bind-key "C->" #'insert-pipe ess-r-mode-map))
+  (with-eval-after-load 'inferior-ess-r-mode
+    (bind-key "C->" #'insert-pipe inferior-ess-r-mode-map)))
 
 ;; Poly-R: R-Markdown support based on poly-mode
 (use-package poly-R
@@ -535,32 +636,43 @@ must be installed at a minimum."
 
 ;; Python configuration
 
+(defun python-shell-send-paragraph-or-region (&optional send-main msg)
+  "Send the paragraph at point to the inferior Python process.  The
+statement is delimited by the beginning and end of paragraph, but if
+the region is active, the text in the region is sent instead via
+`python-shell-send-region'.  Optional argument SEND-MAIN, if non-nil,
+means allow execution of code inside blocks delimited by \"if __name__
+== \\='__main__\\=':\".  Interactively, SEND-MAIN is the prefix
+argument.  Optional argument MSG, if non-nil, forces display of a
+user-friendly message if there's no process running; it defaults to t
+when called interactively."
+  (interactive (list current-prefix-arg t))
+  (if (region-active-p)
+      (python-shell-send-region (region-beginning) (region-end) send-main msg)
+    (save-excursion (python-shell-send-region
+		     (progn (backward-paragraph) (point))
+		     (progn (forward-paragraph) (point))
+		     send-main msg)))
+  (forward-paragraph 2)
+  (backward-paragraph)
+  (forward-line))
+
 (use-package python
   :hook
   (python-mode . eglot-ensure)
-  (python-mode . lm/venv-create-when-needed)
   :custom
-  (python-indent-offset 4))
+  (python-indent-offset 4)
+  (python-shell-completion-native-enable
+   (if (not (equal system-type 'darwin)) t)
+   "Native shell completion doesn't work on MacOS")
+  :bind
+  (:map python-mode-map
+	;; Remaps that mimic the behavior of ESS
+	("C-c C-b" . python-shell-send-buffer)
+	("C-c C-c" . python-shell-send-paragraph-or-region)))
 
-(defun lm/venv-create-when-needed ()
-  "Create a Python virtual environment in the current directory.
-
-Asks the user if he/she wants to set up a Python virtual environment
-(using venv internally). Asks also for a choice of Python interpreter,
-assuming that the corresponding pip version is installed."
-  (interactive)
-  (when (and (not (file-exists-p "pyvenv.cfg"))
-	     (yes-or-no-p "No Python virtual environment detected. Create? "))
-    (let* ((python-bin-name (read-shell-command "Select Python executable: "
-						*python-interpreter-binary*))
-	   (python-bin (executable-find python-bin-name)))
-      (if (file-exists-p python-bin)
-	  (progn (message "Creating Python virtual environment... ")
-		 (shell-command (format "%s -m venv %s" python-bin default-directory))
-		 (message "Environment created in directory %s" default-directory))
-	(message "Python interpreter %s not found." python-bin)))))
-
-;; ipython-shell-send: send snippets to inferior IPython shells (I haven't tested it well)
+;; ipython-shell-send: send snippets to inferior IPython shells (I
+;; haven't tested it well)
 (use-package ipython-shell-send
   :ensure t)
 
@@ -629,29 +741,15 @@ assuming that the corresponding pip version is installed."
   :custom
   (gud-gdb-command-name *gdb-binary*))
 
-;; Insert Guards
-(defun insert-guards (guard-name)
-  "Insert correctly formatted header guards in the file
-(for use with c-mode and c++-mode)."
-  (interactive "sMacro for the guards? ")
-  (when (string-equal guard-name "")
-    (setq guard-name (buffer-name)))
-    ;; Remove the extension
-    (setq guard-name (replace-regexp-in-string "\\..*$" "" guard-name))
-    ;; Replace characters forbidden in C names with underscores
-    (setq guard-name (replace-regexp-in-string "[^a-zA-z0-9_]" "" guard-name))
-    ;; Add bounding 'H' characters to make the macro more unique
-    (setq guard-name (format "H_%s_H" (upcase guard-name)))
-  (save-excursion
-    (goto-char (point-min))
-    (insert (format "#ifndef %s\n#define %s\n\n\n" guard-name guard-name))
-    (goto-char (point-max))
-    (insert (format "\n\n#endif /* %s */\n" guard-name)))
-  ;; Center the point in between the guards if the window was empty.
-  (when (<= (point) 2) (move-to-window-line 4))
-  ;; Warning in case of suspect filename
-  (when (or (null (buffer-file-name)) (not (string-match "\\.[hH]$" (buffer-file-name))))
-    (message "Are you editing a header file (C/C++/Objective-C)?")))
+;; Common Lisp support
+
+(use-package slime
+  :ensure t
+  :config
+  (setq inferior-lisp-program "sbcl")
+  ;; :bind
+  ;; (:map scheme-mode-map ("C-c C-p" . slime)) ; in analogy to Python Mode
+)
 
 ;; Guile-Scheme support
 
@@ -669,18 +767,18 @@ assuming that the corresponding pip version is installed."
   (:map scheme-mode-map ("C-c C-p" . run-geiser))) ; in analogy to Python Mode
 
 ;; Meme "Wizard Book" in Texinfo format. Read it with `M-x info'.
-;; Also worth checking: a homebrew LaTeX version at: https://github.com/sarabander/sicp-pdf.git
-;; and the original free html format at: https://mitpress.mit.edu/sites/default/files/sicp/index.html
+;; Also worth checking:
+;; - a homebrew LaTeX version at:
+;;   https://github.com/sarabander/sicp-pdf.git
+;; - and the original free html format at:
+;;   https://mitpress.mit.edu/sites/default/files/sicp/index.html
 (use-package sicp
   :ensure t)
 
 
 ;;;
-;;; Insert `Customize' setup
+;;; Load `Customize' setup
 ;;;
 
-
-(unless (file-exists-p *custom-file-name*)
-  (make-empty-file *custom-file-name*))
 
 (load-file *custom-file-name*)

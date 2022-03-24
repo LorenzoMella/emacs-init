@@ -18,6 +18,8 @@
 
    - Support for [[https://www.gnu.org/software/guile/][GNU Guile]] through [[https://www.nongnu.org/geiser/][Geiser]].
 
+   - Support for [[https://lisp-lang.org/][Common Lisp]] through [[https://github.com/slime/slime][SLIME]].
+
   
 *** Minor additions
 

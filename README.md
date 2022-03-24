@@ -1,27 +1,27 @@
 
 # Table of Contents
 
-1.  [Emacs Configuration](#org1cf096f)
-    1.  [init.el - the user configuration](#org3546a99)
-        1.  [Heavy-handed additions](#org133ff77)
-        2.  [Minor additions](#orge7e2561)
-    2.  [root-init.el - the root-user terminal configuration](#org441934b)
-    3.  [Future plans](#org5205799)
+1.  [Emacs Configuration](#org1fa754b)
+    1.  [init.el - the user configuration](#org0d503d5)
+        1.  [Heavy-handed additions](#org916acdc)
+        2.  [Minor additions](#org2c6b3bd)
+    2.  [root-init.el - the root-user terminal configuration](#org8384941)
+    3.  [Future plans](#org2729380)
 
 
-<a id="org1cf096f"></a>
+<a id="org1fa754b"></a>
 
 # Emacs Configuration
 
 A relatively minimal Emacs configuration.
 
 
-<a id="org3546a99"></a>
+<a id="org0d503d5"></a>
 
 ## init.el - the user configuration
 
 
-<a id="org133ff77"></a>
+<a id="org916acdc"></a>
 
 ### Heavy-handed additions
 
@@ -37,8 +37,10 @@ A relatively minimal Emacs configuration.
 
 -   Support for [GNU Guile](https://www.gnu.org/software/guile/) through [Geiser](https://www.nongnu.org/geiser/).
 
+-   Support for [Common Lisp](https://lisp-lang.org/) through [SLIME](https://github.com/slime/slime).
 
-<a id="orge7e2561"></a>
+
+<a id="org2c6b3bd"></a>
 
 ### Minor additions
 
@@ -49,7 +51,7 @@ A relatively minimal Emacs configuration.
 -   the [avy](https://github.com/abo-abo/avy) visual text-jumping package.
 
 
-<a id="org441934b"></a>
+<a id="org8384941"></a>
 
 ## root-init.el - the root-user terminal configuration
 
@@ -58,7 +60,7 @@ As such, it is self-contained: it only relies on the packages already included w
 It should be copied or linked as `/root/.emacs.d/init.el`.
 
 
-<a id="org5205799"></a>
+<a id="org2729380"></a>
 
 ## Future plans
 

@@ -9,7 +9,7 @@
 ;; 2. LaTeX support (`AUCTeX', `pdf-tools', `ebib', etc.)
 ;; 3. EXWM support: automatically activated if no WM is found (of course, Linux only)
 ;; 4. (optional) modern-style scrolling (high value for `scroll-conservatively', etc.)
-;; 5. all-the-icons
+;; 5. all-the-icons (may become obsolete, when full emoji support will be available)
 
 
 ;;;
@@ -25,49 +25,49 @@
 (defvar-local *face-variable-pitch-family* "Sans Serif")
 
 ;; Binaries and paths
-(defvar-local *shell-binary* (getenv "SHELL") ; using the default for the current user
+(defvar *shell-binary* (getenv "SHELL") ; using the default for the current user
   "Preferred shell to use with term/ansi-term.")
 
-(defvar-local *python-interpreter-binary* "python3"
+(defvar *python-interpreter-binary* "python3"
   "Preferred python or ipython interpreter.")
 
-(defvar-local *pylsp-binary* "pylsp"
+(defvar *pylsp-binary* "pylsp"
     "Path to the pylsp executable.")
 
-(defvar-local *gdb-binary* "/usr/bin/gdb"
+(defvar *gdb-binary* "/usr/bin/gdb"
   "gdb executable to use with gdb and gud.")
 
-(defvar-local *ccls-binary* "/usr/bin/ccls"
+(defvar *ccls-binary* "/usr/bin/ccls"
   "Path to the ccls executable.")
 
-(defvar-local *additional-texinfo-directories* '("/opt/local/share/info/")
+(defvar *additional-texinfo-directories* '("/opt/local/share/info/")
   "List of the nonstandard texinfo paths.")
 
-(defvar-local *texlive-bin-path* "/usr/bin"
+(defvar *texlive-bin-path* "/usr/bin"
   "Path to the TeXlive binaries.")
 
-(defvar-local *additional-bin-paths* '("~/.local/bin")
+(defvar *additional-bin-paths* '("~/.local/bin")
   "List of paths to additional binaries.")
 
-(defvar-local *ein-image-viewer* "/bin/feh --image-bg white"
+(defvar *ein-image-viewer* "/bin/feh --image-bg white"
   "Image viewing program used by the ein package (with arguments).")
 
 ;; Other settings
-(defvar-local *gc-bytes* (* 50 1024 1024) ; 50MB
+(defvar *gc-bytes* (* 50 1024 1024) ; 50MB
   "Preferred heap threshold size to start garbage collection.")
 
-(defvar-local *custom-file-name*
+(defvar *custom-file-name*
   (expand-file-name "custom-file.el" user-emacs-directory)
   "`Customize' will save its settings in this file. 
 Set it to `nil' to append to this file.")
 
-(defvar-local *transparency-level* 0.97
+(defvar *transparency-level* 0.97
   "Global frame transparency parameter (involving both background and text).")
 
-(defvar-local *preferred-browser* #'browse-url-default-browser
+(defvar *preferred-browser* #'browse-url-default-browser
   "Any one of the browser symbols defined by the browse-url package.")
 
-(defvar-local *initial-scratch-message*
+(defvar *initial-scratch-message*
   ";;                              __       __
 ;;   __/|____________________ _/ /______/ /_  __/|_
 ;;  |    / ___/ ___/ ___/ __ `/ __/ ___/ __ \\|    /
@@ -113,33 +113,12 @@ and line truncation."
 	(t    ; state here = (not truncate-lines)
 	 (toggle-truncate-lines 1))))
 
-;; TODO: adjust length and use comment-add. Also, instead of just
-;; using the minibuffer, if there is text on the line, embrace it with
-;; comment-start (* (1 + comment-add)) and the rest of the line.
-;; (defun comment-line-separator (section-name)
-;;   (interactive "s")
-;;   (let ((section-comment-start)
-;; 	(cl-reduce (lambda (x y) (concat x y))  comment-add) ))
-;;   (insert
-;;    (format "%s %s %s %s\n"
-;; 	   comment-start
-;; 	   section-name
-;; 	   (make-string
-;; 	    (- fill-column
-;; 	       (length comment-start)
-;; 	       (length section-name)
-;; 	       (length comment-end)
-;; 	       3)
-;; 	    ?-)
-;; 	   comment-end)))
-
 
 ;;;
 ;;; Package management
 ;;;
 
 
-;; Load the native package management functionality
 (require 'package)
 
 ;; Add references to online repositories other than GNU ELPA
@@ -157,7 +136,7 @@ and line truncation."
   (package-install 'use-package))
 
 ;; Keep ELPA keys up to date
-(use-package  gnu-elpa-keyring-update
+(use-package gnu-elpa-keyring-update
   :ensure t)
 
 
@@ -245,14 +224,17 @@ and line truncation."
   :init
   (require 'dired-x)
   :custom
-  (dired-auto-revert-buffer t "Refresh the dired buffer whenever unburied")
-  (dired-use-ls-dired (if (eq system-type 'gnu/linux) 'unspecified) "nil on Macs to avoid a warning")
+  (dired-auto-revert-buffer t
+   "Refresh the dired buffer whenever unburied")
+  (dired-use-ls-dired (if (eq system-type 'gnu/linux) 'unspecified)
+   "nil on Macs to avoid a warning")
   (dired-listing-switches
    (if (eq system-type 'gnu/linux)
        "-lahF --group-directories-first"
      "-lahF")
    "ls -l readability adjustments. Group directories first when using coreutils ls")
-  (dired-ls-F-marks-symlinks t "Rename symlinks correctly, if when marked with '@' by ls -lF"))
+  (dired-ls-F-marks-symlinks t
+   "Rename symlinks correctly, if when marked with '@' by ls -lF"))
 
 ;; Org customization
 (use-package org
@@ -282,12 +264,14 @@ and line truncation."
   :hook
   (help-mode . visual-line-mode)
   :custom
-  (help-window-select t	"Switch focus to a help window automatically, when created"))
+  (help-window-select t
+   "Switch focus to a help window automatically, when created"))
 
 ;; Man buffer customization
 (use-package man
   :custom
-  (Man-notify-method 'aggressive "Open Man in another window and switch focus to it"))
+  (Man-notify-method 'aggressive
+   "Open Man in another window and switch focus to it"))
 
 ;; Info mode customization
 (use-package info
@@ -297,13 +281,18 @@ and line truncation."
   (Info-additional-directory-list
    (append Info-additional-directory-list *additional-texinfo-directories*)))
 
+;; Doc View configuration
+(use-package doc-view
+  :custom
+  (doc-view-continuous t
+   "Change page when scrolling beyond the top/bottom"))
+
 ;; GUI browser configuration
 (use-package browse-url
   :custom
   (browse-url-browser-function *preferred-browser*))
 
 ;; Markdown mode configuration
-
 (use-package markdown-mode
   :hook
   (markdown-mode . visual-line-mode))
@@ -431,10 +420,13 @@ and line truncation."
   :ensure t
   :init
   (dashboard-setup-startup-hook)
+  :custom-face		       ; This goes well with the Aperture logo
+  (dashboard-text-banner ((t (:foreground "#e9a902"))))
   :custom
   (dashboard-center-content t)
   (dashboard-page-separator "\n\f\n")
-  (dashboard-startup-banner 'logo "Load alternative logo")
+  (dashboard-startup-banner (expand-file-name "~/.aperture-logo.txt") ; 'logo
+   "Load alternative logo")
   (dashboard-items '((recents . 10) (bookmarks . 10) (agenda . 10)))
   (dashboard-set-footer nil)
   :config
@@ -446,8 +438,8 @@ and line truncation."
     (add-hook 'dashboard-mode-hook #'dashboard-jump-to-recents))
   :bind
   (:map dashboard-mode-map
-	("n" . dashboard-next-line)
-	("p" . dashboard-previous-line)))
+   ("n" . dashboard-next-line)
+   ("p" . dashboard-previous-line)))
 
 ;; Avy: jump easily to any visible text in every frame/window
 (use-package avy
@@ -578,10 +570,10 @@ and line truncation."
   :ensure yasnippet
   :bind
   (:map company-active-map
-	("M-n" . nil)
-	("M-p" . nil)
-	("C-n" . company-select-next-or-abort)
-	("C-p" . company-select-previous-or-abort))
+   ("M-n" . nil)
+   ("M-p" . nil)
+   ("C-n" . company-select-next-or-abort)
+   ("C-p" . company-select-previous-or-abort))
   :custom
   (company-selection-wrap-around t)
   (company-idle-delay 0)
@@ -667,9 +659,9 @@ when called interactively."
    "Native shell completion doesn't work on MacOS")
   :bind
   (:map python-mode-map
-	;; Remaps that mimic the behavior of ESS
-	("C-c C-b" . python-shell-send-buffer)
-	("C-c C-c" . python-shell-send-paragraph-or-region)))
+   ;; Remaps that mimic the behavior of ESS
+   ("C-c C-b" . python-shell-send-buffer)
+   ("C-c C-c" . python-shell-send-paragraph-or-region)))
 
 ;; ipython-shell-send: send snippets to inferior IPython shells (I
 ;; haven't tested it well)
@@ -699,9 +691,9 @@ when called interactively."
 (use-package ein-notebook
   :bind
   (:map ein:notebook-mode-map
-	("<C-return>" . ein:worksheet-execute-cell-and-insert-below-km)
-	("M-n" . ein:worksheet-goto-next-input-km)
-	("M-p" . ein:worksheet-goto-prev-input-km)))
+   ("<C-return>" . ein:worksheet-execute-cell-and-insert-below-km)
+   ("M-n" . ein:worksheet-goto-next-input-km)
+   ("M-p" . ein:worksheet-goto-prev-input-km)))
 
 (use-package ein:notebooklist
   :bind
@@ -714,11 +706,9 @@ when called interactively."
   ((c-mode c++-mode) . c-toggle-hungry-state)
   :bind
   (:map c-mode-map
-	("C-c C-g" . insert-guards)
-	("<f5>" . compile)
+   ("<f5>" . compile)
    :map c++-mode-map
-	("C-c C-g" . insert-guards)
-	("<f5>" . compile)))
+   ("<f5>" . compile)))
 
 ;; Company backend for C/C++ headers
 (use-package company-c-headers
@@ -760,9 +750,12 @@ when called interactively."
   :ensure t
   :after geiser
   :custom
-  (geiser-debug-jump-to-debug-p nil "Don't jump to the debug buffer")
-  (geiser-debug-show-debug-p nil "Don't show the debug buffer")
-  (geiser-guile-manual-lookup-other-window-p t "Open info entries in another window")
+  (geiser-debug-jump-to-debug-p nil
+   "Don't jump to the debug buffer")
+  (geiser-debug-show-debug-p nil
+   "Don't show the debug buffer")
+  (geiser-guile-manual-lookup-other-window-p t
+   "Open info entries in another window")
   :bind
   (:map scheme-mode-map ("C-c C-p" . run-geiser))) ; in analogy to Python Mode
 

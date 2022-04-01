@@ -420,12 +420,10 @@ and line truncation."
   :ensure t
   :init
   (dashboard-setup-startup-hook)
-  :custom-face		       ; This goes well with the Aperture logo
-  (dashboard-text-banner ((t (:foreground "#e9a902"))))
   :custom
   (dashboard-center-content t)
   (dashboard-page-separator "\n\f\n")
-  (dashboard-startup-banner (expand-file-name "~/.aperture-logo.txt") ; 'logo
+  (dashboard-startup-banner 'logo)
    "Load alternative logo")
   (dashboard-items '((recents . 10) (bookmarks . 10) (agenda . 10)))
   (dashboard-set-footer nil)

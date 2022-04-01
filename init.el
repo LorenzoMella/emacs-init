@@ -424,7 +424,6 @@ and line truncation."
   (dashboard-center-content t)
   (dashboard-page-separator "\n\f\n")
   (dashboard-startup-banner 'logo)
-   "Load alternative logo")
   (dashboard-items '((recents . 10) (bookmarks . 10) (agenda . 10)))
   (dashboard-set-footer nil)
   :config

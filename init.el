@@ -374,7 +374,7 @@ and line truncation."
   (variable-pitch
    ((t (:inherit unspecified :family ,*face-variable-pitch-family*))))
   (line-number
-   ((t (:inherit (shadow default) :height 0.8)))))
+   ((t (:inherit shadow :height 0.8)))))
 
 (use-package cus-edit
   :custom-face

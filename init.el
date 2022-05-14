@@ -18,11 +18,11 @@
 
 
 ;; Face families meant to replace the placeholder fonts specified in faces.el
-(defvar-local *face-fixed-pitch-family* "Monospace")
+(defvar-local *face-fixed-pitch-family* "Liberation Mono")
 
-(defvar-local *face-fixed-pitch-serif-family* "Monospace Serif")
+(defvar-local *face-fixed-pitch-serif-family* "Nimbus Mono")
 
-(defvar-local *face-variable-pitch-family* "Sans Serif")
+(defvar-local *face-variable-pitch-family* "DejaVu Serif")
 
 ;; Binaries and paths
 (defvar-local *shell-binary* (getenv "SHELL") ; using the default for the current user
@@ -201,8 +201,15 @@ and line truncation."
 (bind-key "C-M-;" #'comment-line)
 (bind-key "s-=" #'text-scale-increase)
 (bind-key "s--" #'text-scale-decrease)
-(bind-key "s-8" 'iso-transl-ctl-x-8-map key-translation-map) ; Remap the insert-char shortcuts
-(bind-key "s-8 RET" #'insert-char) ; Similar remap of the related `insert-char'
+;; FIX: these don't work with Gnome
+;; Remap the insert-char shortcuts
+(cond ((eq system-type 'gnu/linux)    ; Avoid Gnome incompatibilities 
+       (bind-key "<s-return>" 'iso-transl-ctl-x-8-map key-translation-map)
+       (bind-key "<s-return> RET" #'insert-char))
+      (t 
+       (bind-key "s-8" 'iso-transl-ctl-x-8-map key-translation-map)
+       (bind-key "s-8 RET" #'insert-char)))
+  
 
 ;; Window resizing
 (unbind-key "s-m")			; Normally bound to `iconify-frame' on MacOS
@@ -259,6 +266,7 @@ and line truncation."
   :custom
   (org-ellipsis " ▸")
   (org-special-ctrl-a/e t)  ; FIX: it gets overridden by visual-line-mode
+  (org-startup-indented (not (version< org-version "9.5")))
   :hook
   (org-mode . visual-line-mode)
   :config
@@ -273,8 +281,9 @@ and line truncation."
   :after org
   :config
   (dolist (elem '(("t" . "title")
-		  ("n" . "author")
-		  ("d" . "date")))
+		  ("au" . "author")
+		  ("d" . "date")
+		  ("n" . "name")))
     (add-to-list 'org-tempo-keywords-alist elem)))
 
 ;; Help buffer customization
@@ -375,6 +384,11 @@ and line truncation."
    ((t (:inherit unspecified :family ,*face-variable-pitch-family*))))
   (line-number
    ((t (:inherit shadow :height 0.8)))))
+
+(use-package info
+  :custom-face
+  (Info-quoted
+   ((t (:inherit fixed-pitch-serif)))))
 
 (use-package cus-edit
   :custom-face
@@ -663,7 +677,7 @@ when called interactively."
   :custom
   (python-indent-offset 4)
   (python-shell-completion-native-enable
-   (if (not (equal system-type 'darwin)) t)
+   (not (eq system-type 'darwin))
    "Native shell completion doesn't work on MacOS")
   :bind
   (:map python-mode-map

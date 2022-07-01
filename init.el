@@ -224,7 +224,12 @@ and line truncation."
 ;; Quicken many confirmation prompts
 (defalias 'yes-or-no-p 'y-or-n-p)
 
-;; These are for mouse scrolling even when the Emacs frame is
+;; Mouse scrolling configuration
+(customize-set-variable 'mouse-wheel-tilt-scroll t
+  "Horizontal scrolling on touchpads,Apple Magic Mouse and mice with lateral wheel click")
+(customize-set-variable 'mouse-wheel-flip-direction t
+  "Natural orientation for horizontal scrolling")
+;; These are for scrolling even when the Emacs frame is
 ;; in the background, to achieve Mac-like behavior
 ;; (works under Gnome 3.x and 40. Untested on other gtk WMs)
 (when (eq (window-system) 'x)

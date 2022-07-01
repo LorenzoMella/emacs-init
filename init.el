@@ -43,7 +43,7 @@
 (defvar *additional-texinfo-directories* '("/opt/local/share/info/")
   "List of the nonstandard texinfo paths.")
 
-(defvar *texlive-bin-path* "/usr/local/Cellar/texlive/58837_1/bin"
+(defvar *texlive-bin-path* "/usr/local/bin"
   "Path to the TeXlive binaries.")
 
 (defvar *additional-bin-paths* '("~/.local/bin")

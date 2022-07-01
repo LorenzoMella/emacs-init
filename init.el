@@ -180,7 +180,7 @@ and line truncation."
 (bind-key "C-M-;" #'comment-line)
 (bind-key "s-=" #'text-scale-increase)
 (bind-key "s--" #'text-scale-decrease)
-;; FIX: these don't work with Gnome
+
 ;; Remap the insert-char shortcuts
 (cond ((eq system-type 'gnu/linux)    ; Avoid Gnome incompatibilities 
        (bind-key "<s-return>" 'iso-transl-ctl-x-8-map key-translation-map)
@@ -244,11 +244,22 @@ and line truncation."
    "Rename symlinks correctly, if when marked with '@' by ls -lF"))
 
 ;; Org customization
+
 (use-package org
+  :bind
+  ("C-c a" . org-agenda)
+  ("C-c c" . org-capture)
   :custom
   (org-ellipsis " ▸")
-  (org-special-ctrl-a/e t)  ; FIX: it gets overridden by visual-line-mode
+  ;; These work well (and together) on recent org-mode versions
+  (org-special-ctrl-a/e (not (version< org-version "9.5")))
   (org-startup-indented (not (version< org-version "9.5")))
+  '(org-todo-keyword-faces ; TODO stub: it shouldn't change anything for now
+   (("TODO" . ,(org-get-todo-face "TODO"))
+    ("NEXT" . ,(org-get-todo-face "NEXT"))
+    ("WAITING" . ,(org-get-todo-face "WAITING"))
+    ("DONE" . ,(org-get-todo-face "DONE"))
+    ("CANCELLED" . ,(org-get-todo-face "CANCELLED"))))
   :hook
   (org-mode . visual-line-mode)
   :config
@@ -372,7 +383,9 @@ and line truncation."
   (variable-pitch
    ((t (:inherit unspecified :family ,*face-variable-pitch-family*))))
   (line-number
-   ((t (:inherit shadow :height 0.8)))))
+   ((t (:inherit shadow :height 0.8))))
+  (line-number-current-line
+   ((t (:inherit line-number)))))
 
 (use-package info
   :custom-face
@@ -399,9 +412,9 @@ and line truncation."
 (setenv "PATH" (cl-reduce (lambda (path rest) (concat path ":" rest)) exec-path))
 
 ;; Automate the interactive shell query of ansi-term
-(advice-add 'ansi-term :filter-args '(lambda (shell-name)
-				       (interactive (list *shell-binary*))
-				       shell-name))
+(advice-add 'ansi-term :filter-args #'(lambda (shell-name)
+					(interactive (list *shell-binary*))
+					shell-name))
 
 ;; Set the environment locale in case Emacs defaults to nil or "C"
 ;; (this may happen on MacOS)

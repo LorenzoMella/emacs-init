@@ -1,6 +1,6 @@
-;;  init.el --- Personal init configuration for general use, C programming, Python and R
+;;  init.el --- Personal init configuration for general use, C programming, Python and R -*- lexical-binding:t; coding:utf-8 -*-
 ;;  Author: Lorenzo Mella <lorenzo.mella@hotmail.it>
-;;  Copyright (C) 2021 Lorenzo Mella
+;;  Copyright (C) 2021-2022 Lorenzo Mella
 
 
 ;; TODO:
@@ -43,7 +43,7 @@
 (defvar *additional-texinfo-directories* '("/opt/local/share/info/")
   "List of the nonstandard texinfo paths.")
 
-(defvar *texlive-bin-path* "/usr/bin"
+(defvar *texlive-bin-path* "/usr/local/bin"
   "Path to the TeXlive binaries.")
 
 (defvar *additional-bin-paths* '("~/.local/bin")
@@ -58,7 +58,7 @@
 
 (defvar *custom-file-name*
   (expand-file-name "custom-file.el" user-emacs-directory)
-  "`Customize' will save its settings in this file. 
+  "`Customize' will save its settings in this file.
 Set it to `nil' to append to this file.")
 
 (defvar *transparency-level* 0.97
@@ -88,10 +88,17 @@ Set it to `nil' to append to this file.")
 
 (defalias 'init-show 'lm/custom-settings)
 
+(defun lm/toggle-fullscreen-w/o-ns-native-behavior ()
+  (interactive)
+  (when (and (equal (window-system) 'ns)
+	     (not (null ns-use-native-fullscreen)))
+    (setq ns-use-native-fullscreen nil))
+  (toggle-frame-fullscreen))
+
 (defun lm/frame-resize-and-center (width-fraction)
   "Resizes the frame to about two thirds of the screen."
   (interactive (list 0.618)) ; Using the inverted golden ratio in place of 2/3
-  (let* ((workarea (alist-get 'workarea (car (display-monitor-attributes-list))))
+  (let* ((workarea (frame-monitor-attribute 'workarea))
 	 (new-width (floor (* (caddr workarea) width-fraction)))
 	 (new-height (cadddr workarea))
 	 (top-left-x (+ (car workarea) (/ (- (caddr workarea) new-width) 2)))
@@ -192,7 +199,12 @@ and line truncation."
 
 ;; Window resizing
 (unbind-key "s-m")			; Normally bound to `iconify-frame' on MacOS
-(bind-key "s-m f" #'toggle-frame-fullscreen)
+(bind-key "s-m f" #'lm/toggle-fullscreen-w/o-ns-native-behavior)
+
+
+;; Old-style fullscreen mode on MacOS (i.e., not in its own space, GTK-style)
+
+
 (bind-key "s-m m" #'toggle-frame-maximized)
 (bind-key "s-m c" #'lm/frame-resize-and-center)
 
@@ -219,7 +231,12 @@ and line truncation."
 ;; Quicken many confirmation prompts
 (defalias 'yes-or-no-p 'y-or-n-p)
 
-;; These are for mouse scrolling even when the Emacs frame is
+;; Mouse scrolling configuration
+(customize-set-variable 'mouse-wheel-tilt-scroll t
+  "Horizontal scrolling on touchpads,Apple Magic Mouse and mice with lateral wheel click")
+(customize-set-variable 'mouse-wheel-flip-direction t
+  "Natural orientation for horizontal scrolling")
+;; These are for scrolling even when the Emacs frame is
 ;; in the background, to achieve Mac-like behavior
 ;; (works under Gnome 3.x and 40. Untested on other gtk WMs)
 (when (eq (window-system) 'x)
@@ -260,8 +277,13 @@ and line truncation."
     ("WAITING" . ,(org-get-todo-face "WAITING"))
     ("DONE" . ,(org-get-todo-face "DONE"))
     ("CANCELLED" . ,(org-get-todo-face "CANCELLED"))))
+  (org-agenda-files (list (expand-file-name "~/notes")))
   :hook
   (org-mode . visual-line-mode)
+  :bind
+  (:map org-mode-map
+   ("C-c t" . org-tags-view))
+  ("C-c a" . org-agenda)
   :config
   ;; Additional code-block expansions
   (dolist (elem '(("b" . "src bash") ("conf" . "src conf")
@@ -335,16 +357,13 @@ and line truncation."
 			(append default-frame-alist
 				`((alpha . ,*transparency-level*))))
 
-;; Old-style fullscreen mode on MacOS (i.e., not in its own space, GTK-style)
-(when (equal (window-system) 'ns)
-  (customize-set-variable 'ns-use-native-fullscreen nil))
-
 ;; Replace the default scratch message
 (customize-set-variable 'initial-scratch-message *initial-scratch-message*)
 
 ;; Convert non-visible ^L (form feed) into a horizontal line
 (use-package page-break-lines
   :ensure t
+
   :init
   (global-page-break-lines-mode))
 
@@ -384,7 +403,7 @@ and line truncation."
    ((t (:inherit unspecified :family ,*face-variable-pitch-family*))))
   (line-number
    ((t (:inherit shadow :height 0.8))))
-  (line-number-current-line
+  (line-number-current-line  ; make the height the same as line-number
    ((t (:inherit line-number)))))
 
 (use-package info
@@ -423,6 +442,16 @@ and line truncation."
   (let (locale (getenv env-var))
     (when (or (null locale) (string= locale "C"))
       (setenv env-var "en_US.UTF-8"))))
+
+
+;;;
+;;; Encryption
+;;;
+
+
+(use-package epg-config
+  :custom
+  (epg-pinentry-mode 'loopback))
 
 
 ;;;

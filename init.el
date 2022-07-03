@@ -25,6 +25,8 @@
 (defvar-local *face-variable-pitch-family* "DejaVu Serif")
 
 ;; Binaries and paths
+(defvar *org-agenda-paths* '("~/notes/tasks/"))
+
 (defvar *shell-binary* (getenv "SHELL") ; using the default for the current user
   "Preferred shell to use with term/ansi-term.")
 
@@ -277,7 +279,7 @@ and line truncation."
     ("WAITING" . ,(org-get-todo-face "WAITING"))
     ("DONE" . ,(org-get-todo-face "DONE"))
     ("CANCELLED" . ,(org-get-todo-face "CANCELLED"))))
-  (org-agenda-files (list (expand-file-name "~/notes")))
+  (org-agenda-files (mapcar #'expand-file-name *org-agenda-paths*))
   :hook
   (org-mode . visual-line-mode)
   :bind

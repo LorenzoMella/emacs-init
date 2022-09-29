@@ -8,8 +8,7 @@
 ;; 1. org-agenda configuration
 ;; 2. LaTeX support (`AUCTeX', `pdf-tools', `ebib', etc.)
 ;; 3. EXWM support: automatically activated if no WM is found (of course, Linux only)
-;; 4. (optional) modern-style scrolling (high value for `scroll-conservatively', etc.)
-;; 5. all-the-icons (may become obsolete, when full emoji support will be available)
+;; 4. all-the-icons (may become obsolete, with full emoji font support)
 
 
 ;;;
@@ -43,11 +42,20 @@
 (defvar *additional-texinfo-directories* '("/opt/local/share/info/")
   "List of the nonstandard texinfo paths.")
 
+(defvar *additional-python-source-paths* '("/Users/lorenzomella/code/common_packages/")
+  "Paths to be added to `python-shell-extra-pythonpaths'")
+
+(defvar *python-virtual-environment-home-path* "~/virtual_envs"
+  "The directory where the Python Virtual Environments are located. Ignored if nil.")
+
 (defvar *texlive-bin-path* "/usr/local/Cellar/texlive/58837_1/bin"
   "Path to the TeXlive binaries.")
 
 (defvar *additional-bin-paths* '("~/.local/bin")
   "List of paths to additional binaries.")
+
+(defvar *preferred-sql-product* 'postgres
+  "The most likely SQL dialect in use (a symbol).")
 
 (defvar *ein-image-viewer* "/bin/feh --image-bg white"
   "Image viewing program used by the ein package (with arguments).")
@@ -87,13 +95,6 @@ Set it to `nil' to append to this file.")
   (find-file-existing user-init-file))
 
 (defalias 'init-show 'lm/custom-settings)
-
-(defun lm/toggle-fullscreen-w/o-ns-native-behavior ()
-  (interactive)
-  (when (and (equal (window-system) 'ns)
-	     (not (null ns-use-native-fullscreen)))
-    (setq ns-use-native-fullscreen nil))
-  (toggle-frame-fullscreen))
 
 (defun lm/frame-resize-and-center (width-fraction)
   "Resizes the frame to about two thirds of the screen."
@@ -190,16 +191,12 @@ and line truncation."
 (bind-key "s-8" 'iso-transl-ctl-x-8-map key-translation-map) ; Remap the insert-char shortcuts
 (bind-key "s-8 RET" #'insert-char) ; Similar remap of the related `insert-char'
 
-;; Window resizing
-(unbind-key "s-m")			; Normally bound to `iconify-frame' on MacOS
-(bind-key "s-m f" #'lm/toggle-fullscreen-w/o-ns-native-behavior)
-
-
-;; Old-style fullscreen mode on MacOS (i.e., not in its own space, GTK-style)
-
-
+;; Window-resizing keybindings
+(unbind-key "s-m") ; Normally bound to `iconify-frame' on MacOS. Use `C-z' instead
+(bind-key "s-m f" #'toggle-frame-fullscreen)
 (bind-key "s-m m" #'toggle-frame-maximized)
 (bind-key "s-m c" #'lm/frame-resize-and-center)
+(bind-key "s-m s" #'window-toggle-side-windows)
 
 ;; Remap keys to more convenient commands
 (bind-key [remap kill-buffer] #'kill-current-buffer)
@@ -221,6 +218,9 @@ and line truncation."
 ;; Follow symlinks when calling find-file (useful for git awareness)
 (customize-set-variable 'find-file-visit-truename t)
 
+;; Give more leeway to the fill column
+(customize-set-variable 'fill-column 80)
+
 ;; Quicken many confirmation prompts
 (defalias 'yes-or-no-p 'y-or-n-p)
 
@@ -236,6 +236,20 @@ and line truncation."
   (bind-key "<s-mouse-4>" #'mwheel-scroll)
   (bind-key "<s-mouse-5>" #'mwheel-scroll))
 
+;; Display Buffer customization
+(use-package window
+  :custom
+  (display-buffer-alist
+   `(("\*eldoc\*"
+      display-buffer-in-side-window
+      (side . bottom)
+      (slot . 0)
+      (window-parameters . ((no-other-window . t))))
+     ("\*[Pp]ython.*"
+      display-buffer-in-side-window
+      (side . bottom)
+      (slot . 1)))))
+
 ;; Dired customization
 (use-package dired
   :init
@@ -250,8 +264,13 @@ and line truncation."
        "-lahF --group-directories-first"
      "-lahF")
    "ls -l readability adjustments. Group directories first when using coreutils ls")
-  (dired-ls-F-marks-symlinks t
-   "Rename symlinks correctly, if when marked with '@' by ls -lF"))
+  (dired-ls-F-marks-symlinks (eq system-type 'darwin)
+   "Rename symlinks correctly, when marked with '@' by ls -lF"))
+
+;; Package Menu customization
+(use-package package
+  :hook
+  (package-menu-mode . hl-line-mode))
 
 ;; Org customization
 (use-package org
@@ -259,9 +278,15 @@ and line truncation."
   (org-ellipsis " ▸")
   (org-startup-indented (not (version< org-version "9.5")))
   (org-special-ctrl-a/e (not (version< org-version "9.5")))
-  (org-agenda-files (list (expand-file-name "~/notes")))
+  ;; (org-agenda-files (list (expand-file-name "~/notes")))
+  (org-todo-keywords '((sequence "TODO(t)"
+				 "WAITING(w)"
+				 "|"
+				 "CANCELLED(c)"
+				 "DONE(d)")))
   :hook
   (org-mode . visual-line-mode)
+  (org-agenda-mode . hl-line-mode)
   :bind
   (:map org-mode-map
    ("C-c t" . org-tags-view))
@@ -272,7 +297,9 @@ and line truncation."
 		  ("el" . "src emacs-lisp") ("py" . "src python")))
     (add-to-list 'org-structure-template-alist elem))
   ;; Better initial scaling of latex preview rendering in org documents
-  (plist-put org-format-latex-options :scale 2.0))
+  (plist-put org-format-latex-options :scale 2.0)
+  (dolist (x '(python jupyter))
+    (add-to-list 'org-babel-load-languages `(,x . t))))
 
 (use-package org-tempo
   :after org
@@ -351,7 +378,14 @@ and line truncation."
 ;; hl-line-mode in selected bundled modes
 (use-package hl-line
   :hook
-  ((package-menu-mode org-agenda-mode) . hl-line-mode))
+  (package-menu-mode . hl-line-mode))
+
+;; Display Time Mode appearance
+(use-package time
+  :custom
+  (display-time-interval 1)
+  (display-time-default-load-average nil)
+  (display-time-format "%a %d %b %y %T"))
 
 ;; Isolate themes not managed by `package' or `use-package' (e.g., user-created ones)
 (let ((theme-directory (expand-file-name "themes" user-emacs-directory)))
@@ -407,9 +441,9 @@ and line truncation."
 (setenv "PATH" (cl-reduce (lambda (path rest) (concat path ":" rest)) exec-path))
 
 ;; Automate the interactive shell query of ansi-term
-(advice-add 'ansi-term :filter-args '(lambda (shell-name)
-				       (interactive (list *shell-binary*))
-				       shell-name))
+(advice-add 'ansi-term :filter-args #'(lambda (shell-name)
+					(interactive (list *shell-binary*))
+					shell-name))
 
 ;; Set the environment locale in case Emacs defaults to nil or "C"
 ;; (this may happen on MacOS)
@@ -577,13 +611,26 @@ and line truncation."
   (define-auto-insert
     '("\\.\\([Hh]\\|hh\\|hpp\\|hxx\\|h\\+\\+\\)\\'" . "C / C++ header")
     '((replace-regexp-in-string
-     "[^A-Z0-9]" "_"
-     (replace-regexp-in-string
-      "\\+" "P"
-      (upcase (file-name-nondirectory buffer-file-name))))
-    "#ifndef H_" str \n
-    "#define H_" str "\n\n"
-    _ "\n\n#endif /* " str " */"))
+       "[^A-Z0-9]" "_"
+       (replace-regexp-in-string
+	"\\+" "P"
+	(upcase (file-name-nondirectory buffer-file-name))))
+      "#ifndef H_" str \n
+      "#define H_" str \n \n
+      _ "\n\n#endif /* " str " */"))
+  (define-auto-insert
+    '("\\.sh\\'" . "Shell script")
+    '(nil
+      "#!" *shell-binary* \n \n \n))
+  (define-auto-insert
+    '("\\.[Pp][Yy]\\'" . "Python script")
+    '((replace-regexp-in-string
+       "[^A-Z0-9]" "_")
+      "#!/usr/bin/env python" \n \n \n
+      "def main():" \n
+      _ "pass" \n \n \n
+      "if __name__ == '__main__':" \n
+      "main()" \n))
   (auto-insert-mode t))
 
 ;; Magit: highly comfy git interface
@@ -611,13 +658,35 @@ and line truncation."
   ((prog-mode . company-mode)
    (prog-mode . yas-minor-mode)))
 
+;; Eldoc configuration
+(use-package eldoc
+  :custom
+  (eldoc-echo-area-prefer-doc-buffer t))
+
+;; CSV Mode - Support for column-wise CSV-file visualization
+(use-package csv-mode
+  :ensure t
+  :hook
+  (csv-mode . csv-align-mode)
+  (csv-mode . csv-header-line)
+  ;; I wish I could use this but it misaligns the header bar
+  ;; (csv-mode . display-line-numbers-mode)
+  (csv-mode . hl-line-mode))
+
 ;; Eglot support for Microsoft's Language Server Protocol (LSP)
 
 (use-package eglot
   :ensure t
+  :hook
+  ((python-mode c-mode c++-mode) . eglot-ensure)
   :config
   (add-to-list 'eglot-server-programs `(c-mode ,*ccls-binary*))
   (add-to-list 'eglot-server-programs `(python-mode ,*pylsp-binary*)))
+
+;; SQL configuration
+(use-package sql
+  :custom
+  (sql-product *preferred-sql-product*))
 
 ;; ESS - Emacs Speaks Statistics: R and R Markdown suite
 
@@ -627,7 +696,7 @@ package."
   (interactive)
   (insert "%>% "))
 
-;; Automate the pdf rendering of rmarkdown projects
+;; Automate the pdf rendering of R Markdown projects
 (defun rmarkdown-render (filename)
   "Run rmarkdown::render on the chosen file.
 R and the rmarkdown package, and appropriate renderers,
@@ -679,8 +748,6 @@ when called interactively."
   (forward-line))
 
 (use-package python
-  :hook
-  (python-mode . eglot-ensure)
   :custom
   (python-indent-offset 4)
   (python-shell-completion-native-enable
@@ -690,12 +757,17 @@ when called interactively."
   (:map python-mode-map
    ;; Remaps that mimic the behavior of ESS
    ("C-c C-b" . python-shell-send-buffer)
-   ("C-c C-c" . python-shell-send-paragraph-or-region)))
+   ("C-c C-c" . python-shell-send-paragraph-or-region))
+  :init
+  (setenv "PYTHONPATH"
+	  (string-join *additional-python-source-paths* path-separator))
+  (when *python-virtual-environment-home-path*
+    (setenv "WORKON_HOME" *python-virtual-environment-home-path*)))
 
 ;; ipython-shell-send: send snippets to inferior IPython shells (I
 ;; haven't tested it well)
-(use-package ipython-shell-send
-  :ensure t)
+;; (use-package ipython-shell-send
+;; :ensure t)
 
 ;; Activate and make the inferior shell aware of virtual environments
 ;; FIX: I don't remember the meaning of hook and shell specifications
@@ -704,7 +776,18 @@ when called interactively."
   :custom
   (pyvenv-exec-shell *shell-binary*)
   :hook
-  ((python-mode inferior-python-mode) . pyvenv-mode))
+  ((python-mode inferior-python-mode) . pyvenv-mode)
+  :hook
+  (pyvenv-post-activate-hooks . (lambda ()
+				  (when (y-or-n-p "Restart Python shell?")
+				    (pyvenv-restart-python))))
+  :config
+  (setq pyvenv-mode-line-indicator
+	'(pyvenv-virtual-env-name
+	  ("[pyvenv:" pyvenv-virtual-env-name "] "))))
+
+(use-package jupyter
+  :ensure t)
 
 ;; EIN: Jupyter support (experimental setup: doesn't support lsp)
 (use-package ein
@@ -749,9 +832,6 @@ when called interactively."
 ;; ccls: C/C++ backend for LSP
 (use-package ccls
   :ensure t
-  :after eglot
-  :hook
-  ((c-mode c++-mode) . eglot-ensure)
   :custom
   (ccls-executable *ccls-binary*))
 

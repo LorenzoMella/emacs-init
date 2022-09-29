@@ -29,6 +29,12 @@
 
     - the [[https://github.com/abo-abo/avy][avy]] visual text-jumping package.
 
+** early-init.el
+
+At the moment it is only used to set the Mac-specific variable =ns-use-native-fullscreen= to =nil=. Emacs frames will enter fullscreen as an overlay of their current desktop, without creating a dedicated space.
+
+For some reason, if not set in Early Init, this feature only works starting at the second attempt.
+
 ** root-init.el - the root-user terminal configuration
 
    This init file provides a lightweight terminal-oriented configuration. The use case I had in mind was a customization suitable for system administrators.

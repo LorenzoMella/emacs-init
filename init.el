@@ -30,7 +30,7 @@
 (defvar *python-interpreter-binary* "python3"
   "Preferred python or ipython interpreter.")
 
-(defvar *pylsp-binary* "pylsp"
+(defvar *pylsp-binary* "~/.pyenv/shims/pylsp"
     "Path to the pylsp executable.")
 
 (defvar *gdb-binary* "/usr/bin/gdb"
@@ -39,10 +39,13 @@
 (defvar *ccls-binary* "/usr/bin/ccls"
   "Path to the ccls executable.")
 
-(defvar *additional-texinfo-directories* '("/opt/local/share/info/")
+(defvar *lisp-interpreter* "clisp"
+  "The name (or path) of the Common Lisp interpreter of choice)")
+
+(defvar *additional-texinfo-directories* '("/opt/local/share/info")
   "List of the nonstandard texinfo paths.")
 
-(defvar *additional-python-source-paths* '("/Users/lorenzomella/code/common_packages/")
+(defvar *additional-python-source-paths* '("~/code/common_packages")
   "Paths to be added to `python-shell-extra-pythonpaths'")
 
 (defvar *python-virtual-environment-home-path* "~/virtual_envs"
@@ -51,7 +54,7 @@
 (defvar *texlive-bin-path* "/usr/local/Cellar/texlive/58837_1/bin"
   "Path to the TeXlive binaries.")
 
-(defvar *additional-bin-paths* '("~/.local/bin")
+(defvar *additional-bin-paths* '("~/.local/bin" "~/.pyenv/shims")
   "List of paths to additional binaries.")
 
 (defvar *preferred-sql-product* 'postgres
@@ -434,9 +437,9 @@ and line truncation."
 
 ;; Add additional paths to both the environment variable PATH and the
 ;; Emacs exec-path list
+(add-to-list 'exec-path (expand-file-name *texlive-bin-path*))
 (dolist (path *additional-bin-paths*)
   (add-to-list 'exec-path (expand-file-name path)))
-(add-to-list 'exec-path (expand-file-name *texlive-bin-path*))
 
 (setenv "PATH" (cl-reduce (lambda (path rest) (concat path ":" rest)) exec-path))
 
@@ -758,11 +761,13 @@ when called interactively."
    ;; Remaps that mimic the behavior of ESS
    ("C-c C-b" . python-shell-send-buffer)
    ("C-c C-c" . python-shell-send-paragraph-or-region))
-  :init
+  :init					; these can be done with local varialbes
   (setenv "PYTHONPATH"
-	  (string-join *additional-python-source-paths* path-separator))
+	  (string-join
+	   (mapcar #'expand-file-name *additional-python-source-paths*)
+	   path-separator))
   (when *python-virtual-environment-home-path*
-    (setenv "WORKON_HOME" *python-virtual-environment-home-path*)))
+    (setenv "WORKON_HOME" (expand-file-name *python-virtual-environment-home-path*))))
 
 ;; ipython-shell-send: send snippets to inferior IPython shells (I
 ;; haven't tested it well)
@@ -844,8 +849,8 @@ when called interactively."
 
 (use-package slime
   :ensure t
-  :config
-  (setq inferior-lisp-program "sbcl")
+  :init
+  (customize-set-variable 'inferior-lisp-program *lisp-interpreter*)
   ;; :bind
   ;; (:map scheme-mode-map ("C-c C-p" . slime)) ; in analogy to Python Mode
 )

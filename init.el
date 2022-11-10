@@ -785,12 +785,13 @@ when called interactively."
   :ensure t
   :custom
   (pyvenv-exec-shell *shell-binary*)
+  :bind
+  ("C-c v a" . pyvenv-activate)
+  ("C-c v d" . pyvenv-deactivate)
+  ("C-c v w" . pyvenv-workon)
+  ("C-c v r" . pyvenv-restart-python)
   :hook
   ((python-mode inferior-python-mode) . pyvenv-mode)
-  :hook
-  (pyvenv-post-activate-hooks . (lambda ()
-				  (when (y-or-n-p "Restart Python shell?")
-				    (pyvenv-restart-python))))
   :config
   (setq pyvenv-mode-line-indicator
 	'(pyvenv-virtual-env-name

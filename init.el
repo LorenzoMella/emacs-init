@@ -462,6 +462,12 @@ and line truncation."
       (setenv env-var "en_US.UTF-8"))))
 
 
+(use-package vterm
+  :ensure t
+  :custom
+  (vterm-max-scrollback 10000))
+
+
 ;;;
 ;;; Encryption
 ;;;

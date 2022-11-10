@@ -243,15 +243,20 @@ and line truncation."
 (use-package window
   :custom
   (display-buffer-alist
-   `(("\*eldoc\*"
+   `(
+     '("\\*\\(Async \\)?Shell Command.*"
+       do nothing)
+     ("\\*eldoc\\*"
       display-buffer-in-side-window
       (side . bottom)
       (slot . 0)
+      (dedicated . t)
       (window-parameters . ((no-other-window . t))))
-     ("\*[Pp]ython.*"
+     ("\\*[Pp]ython.*"
       display-buffer-in-side-window
       (side . bottom)
-      (slot . 1)))))
+      (slot . 1)
+      (dedicated . t)))))
 
 ;; Dired customization
 (use-package dired

@@ -264,8 +264,8 @@ and line truncation."
    "nil on Macs to avoid a warning")
   (dired-listing-switches
    (if (eq system-type 'gnu/linux)
-       "-lahF --group-directories-first"
-     "-lahF")
+       "-lahFb --group-directories-first"
+     "-lahFb")
    "ls -l readability adjustments. Group directories first when using coreutils ls")
   (dired-ls-F-marks-symlinks (eq system-type 'darwin)
    "Rename symlinks correctly, when marked with '@' by ls -lF"))

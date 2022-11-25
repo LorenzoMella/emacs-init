@@ -754,9 +754,12 @@ when called interactively."
 		     (progn (backward-paragraph) (point))
 		     (progn (forward-paragraph) (point))
 		     send-main msg)))
-  (forward-paragraph 2)
-  (backward-paragraph)
-  (forward-line))
+  (forward-paragraph)
+  (if (= (point) (point-max))
+      (end-of-line)
+    (forward-paragraph)
+    (backward-paragraph)
+    (forward-line)))
 
 (use-package python
   :custom

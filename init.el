@@ -273,7 +273,9 @@ and line truncation."
      "-lahFb")
    "ls -l readability adjustments. Group directories first when using coreutils ls")
   (dired-ls-F-marks-symlinks (eq system-type 'darwin)
-   "Rename symlinks correctly, when marked with '@' by ls -lF"))
+			     "Rename symlinks correctly, when marked with '@' by ls -lF")
+  :hook
+  (dired-mode . hl-line-mode))
 
 ;; Package Menu customization
 (use-package package
@@ -382,11 +384,6 @@ and line truncation."
 
   :init
   (global-page-break-lines-mode))
-
-;; hl-line-mode in selected bundled modes
-(use-package hl-line
-  :hook
-  (package-menu-mode . hl-line-mode))
 
 ;; Display Time Mode appearance
 (use-package time

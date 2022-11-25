@@ -433,6 +433,26 @@ and line truncation."
 
 
 ;;;
+;;; Regional and locale configuration
+;;;
+
+
+;; Calendar adjustments
+(use-package calendar
+  :custom
+  (calendar-date-style 'european)
+  (calendar-week-start-day 1))
+
+;; Set the environment locale in case Emacs defaults to nil or "C"
+;; (this may happen on MacOS)
+(dolist (env-var '("LANG" "LANGUAGE" "LC_CTYPE" "LC_COLLATE"
+		   "LC_TIME" "LC_MESSAGES" "LC_MONETARY"))
+  (let (locale (getenv env-var))
+    (when (or (null locale) (string= locale "C"))
+      (setenv env-var "en_US.UTF-8"))))
+
+
+;;;
 ;;; Environment and Shell Configuration
 ;;;
 
@@ -449,15 +469,6 @@ and line truncation."
 (advice-add 'ansi-term :filter-args #'(lambda (shell-name)
 					(interactive (list *shell-binary*))
 					shell-name))
-
-;; Set the environment locale in case Emacs defaults to nil or "C"
-;; (this may happen on MacOS)
-(dolist (env-var '("LANG" "LANGUAGE" "LC_CTYPE" "LC_COLLATE"
-		   "LC_TIME" "LC_MESSAGES" "LC_MONETARY"))
-  (let (locale (getenv env-var))
-    (when (or (null locale) (string= locale "C"))
-      (setenv env-var "en_US.UTF-8"))))
-
 
 (use-package vterm
   :ensure t

@@ -30,7 +30,7 @@
 (defvar *python-interpreter-binary* "python3"
   "Preferred python or ipython interpreter.")
 
-(defvar *pylsp-binary* "pylsp"
+(defvar *pylsp-binary* "~/.local/bin/pylsp"
     "Path to the pylsp executable.")
 
 (defvar *gdb-binary* "/usr/bin/gdb"
@@ -39,7 +39,10 @@
 (defvar *ccls-binary* "/usr/bin/ccls"
   "Path to the ccls executable.")
 
-(defvar *additional-texinfo-directories* '("/opt/local/share/info/")
+(defvar *lisp-interpreter* "lisp"
+  "The name (or path) of the Common Lisp interpreter of choice)")
+
+(defvar *additional-texinfo-directories* '("/opt/local/share/info")
   "List of the nonstandard texinfo paths.")
 
 (defvar *additional-python-source-paths* '("~/.local/site_packages/")
@@ -240,15 +243,20 @@ and line truncation."
 (use-package window
   :custom
   (display-buffer-alist
-   `(("\*eldoc\*"
+   `(
+     '("\\*\\(Async \\)?Shell Command.*"
+       do nothing)
+     ("\\*eldoc\\*"
       display-buffer-in-side-window
       (side . bottom)
       (slot . 0)
+      (dedicated . t)
       (window-parameters . ((no-other-window . t))))
-     ("\*[Pp]ython.*"
+     ("\\*[Pp]ython.*"
       display-buffer-in-side-window
       (side . bottom)
-      (slot . 1)))))
+      (slot . 1)
+      (dedicated . t)))))
 
 ;; Dired customization
 (use-package dired
@@ -261,11 +269,13 @@ and line truncation."
    "nil on Macs to avoid a warning")
   (dired-listing-switches
    (if (eq system-type 'gnu/linux)
-       "-lahF --group-directories-first"
-     "-lahF")
+       "-lahFb --group-directories-first"
+     "-lahFb")
    "ls -l readability adjustments. Group directories first when using coreutils ls")
   (dired-ls-F-marks-symlinks (eq system-type 'darwin)
-   "Rename symlinks correctly, when marked with '@' by ls -lF"))
+			     "Rename symlinks correctly, when marked with '@' by ls -lF")
+  :hook
+  (dired-mode . hl-line-mode))
 
 ;; Package Menu customization
 (use-package package
@@ -375,11 +385,6 @@ and line truncation."
   :init
   (global-page-break-lines-mode))
 
-;; hl-line-mode in selected bundled modes
-(use-package hl-line
-  :hook
-  (package-menu-mode . hl-line-mode))
-
 ;; Display Time Mode appearance
 (use-package time
   :custom
@@ -428,22 +433,15 @@ and line truncation."
 
 
 ;;;
-;;; Environment and Shell Configuration
+;;; Regional and locale configuration
 ;;;
 
 
-;; Add additional paths to both the environment variable PATH and the
-;; Emacs exec-path list
-(dolist (path *additional-bin-paths*)
-  (add-to-list 'exec-path (expand-file-name path)))
-(add-to-list 'exec-path (expand-file-name *texlive-bin-path*))
-
-(setenv "PATH" (cl-reduce (lambda (path rest) (concat path ":" rest)) exec-path))
-
-;; Automate the interactive shell query of ansi-term
-(advice-add 'ansi-term :filter-args #'(lambda (shell-name)
-					(interactive (list *shell-binary*))
-					shell-name))
+;; Calendar adjustments
+(use-package calendar
+  :custom
+  (calendar-date-style 'european)
+  (calendar-week-start-day 1))
 
 ;; Set the environment locale in case Emacs defaults to nil or "C"
 ;; (this may happen on MacOS)
@@ -452,6 +450,30 @@ and line truncation."
   (let (locale (getenv env-var))
     (when (or (null locale) (string= locale "C"))
       (setenv env-var "en_US.UTF-8"))))
+
+
+;;;
+;;; Environment and Shell Configuration
+;;;
+
+
+;; Add additional paths to both the environment variable PATH and the
+;; Emacs exec-path list
+(add-to-list 'exec-path (expand-file-name *texlive-bin-path*))
+(dolist (path *additional-bin-paths*)
+  (add-to-list 'exec-path (expand-file-name path)))
+
+(setenv "PATH" (cl-reduce (lambda (path rest) (concat path ":" rest)) exec-path))
+
+;; Automate the interactive shell query of ansi-term
+(advice-add 'ansi-term :filter-args #'(lambda (shell-name)
+					(interactive (list *shell-binary*))
+					shell-name))
+
+(use-package vterm
+  :ensure t
+  :custom
+  (vterm-max-scrollback 10000))
 
 
 ;;;
@@ -743,9 +765,12 @@ when called interactively."
 		     (progn (backward-paragraph) (point))
 		     (progn (forward-paragraph) (point))
 		     send-main msg)))
-  (forward-paragraph 2)
-  (backward-paragraph)
-  (forward-line))
+  (forward-paragraph)
+  (if (= (point) (point-max))
+      (end-of-line)
+    (forward-paragraph)
+    (backward-paragraph)
+    (forward-line)))
 
 (use-package python
   :custom
@@ -758,11 +783,13 @@ when called interactively."
    ;; Remaps that mimic the behavior of ESS
    ("C-c C-b" . python-shell-send-buffer)
    ("C-c C-c" . python-shell-send-paragraph-or-region))
-  :init
+  :init					; these can be done with local varialbes
   (setenv "PYTHONPATH"
-	  (string-join *additional-python-source-paths* path-separator))
+	  (string-join
+	   (mapcar #'expand-file-name *additional-python-source-paths*)
+	   path-separator))
   (when *python-virtual-environment-home-path*
-    (setenv "WORKON_HOME" *python-virtual-environment-home-path*)))
+    (setenv "WORKON_HOME" (expand-file-name *python-virtual-environment-home-path*))))
 
 ;; ipython-shell-send: send snippets to inferior IPython shells (I
 ;; haven't tested it well)
@@ -775,12 +802,13 @@ when called interactively."
   :ensure t
   :custom
   (pyvenv-exec-shell *shell-binary*)
+  :bind
+  ("C-c v a" . pyvenv-activate)
+  ("C-c v d" . pyvenv-deactivate)
+  ("C-c v w" . pyvenv-workon)
+  ("C-c v r" . pyvenv-restart-python)
   :hook
   ((python-mode inferior-python-mode) . pyvenv-mode)
-  :hook
-  (pyvenv-post-activate-hooks . (lambda ()
-				  (when (y-or-n-p "Restart Python shell?")
-				    (pyvenv-restart-python))))
   :config
   (setq pyvenv-mode-line-indicator
 	'(pyvenv-virtual-env-name
@@ -844,8 +872,8 @@ when called interactively."
 
 (use-package slime
   :ensure t
-  :config
-  (setq inferior-lisp-program "sbcl")
+  :init
+  (customize-set-variable 'inferior-lisp-program *lisp-interpreter*)
   ;; :bind
   ;; (:map scheme-mode-map ("C-c C-p" . slime)) ; in analogy to Python Mode
 )

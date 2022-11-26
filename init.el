@@ -175,9 +175,17 @@ and line truncation."
 ;;;
 
 
-;; Remove "legacy" GUI widgets
+;; Remove useless GUI widgets
+(menu-bar-mode -1)
 (tool-bar-mode -1)
 (scroll-bar-mode -1)
+
+;; Tab Bar Mode
+(use-package time
+  :custom
+  (display-time-interval 1)
+  (display-time-default-load-average nil)
+  (display-time-format "%a %d-%m-%Y %k:%M:%S"))
 
 ;; Remap commands to more convenient keys (the defaults still work)
 (bind-key "M-o" #'other-window)

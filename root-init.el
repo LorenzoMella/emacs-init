@@ -38,8 +38,12 @@
 (ido-everywhere)
 
 (if (boundp 'fido-mode)	; fido is just icomplete with ido behavior (introduced in Emacs 27?)
-    (fido-mode)
-  (icomplete-mode))
+    (if (boundp 'fido-vertical-mode)
+	(fido-vertical-mode)
+      (fido-mode))		      ; (fido-vertical-mode introduced in Emacs 28.1)
+  (if (boundp 'icomplete-vertical-mode)
+      (icomplete-vertical-mode)	      ; (icomplete-vertical-mode introduced in Emacs 28.1)
+    (icomplete-mode)))
 
 (customize-set-variable 'ido-decorations '("\n-> " "" "\n" ""
 					   " [" "]" " [No match]"

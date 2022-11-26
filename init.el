@@ -282,7 +282,6 @@ and line truncation."
   (org-startup-indented (not (version< org-version "9.5")))
   '(org-todo-keyword-faces ; TODO stub: it shouldn't change anything for now
    (("TODO" . ,(org-get-todo-face "TODO"))
-    ("NEXT" . ,(org-get-todo-face "NEXT"))
     ("WAITING" . ,(org-get-todo-face "WAITING"))
     ("DONE" . ,(org-get-todo-face "DONE"))
     ("CANCELLED" . ,(org-get-todo-face "CANCELLED"))))
@@ -299,7 +298,8 @@ and line truncation."
 		  ("el" . "src emacs-lisp") ("py" . "src python")))
     (add-to-list 'org-structure-template-alist elem))
   ;; Better initial scaling of latex preview rendering in org documents
-  (plist-put org-format-latex-options :scale 2.0))
+  (plist-put org-format-latex-options :scale 2.0)
+  (org-babel-do-load-languages 'org-babel-load-languages '((python . t))))
 
 (use-package org-tempo
   :after org
@@ -385,7 +385,7 @@ and line truncation."
 ;; hl-line-mode in selected bundled modes
 (use-package hl-line
   :hook
-  ((package-menu-mode org-agenda-mode) . hl-line-mode))
+  ((dired-mode package-menu-mode org-agenda-mode) . hl-line-mode))
 
 ;; Isolate themes not managed by `package' or `use-package' (e.g., user-created ones)
 (let ((theme-directory (expand-file-name "themes" user-emacs-directory)))
@@ -721,6 +721,8 @@ when called interactively."
   :hook
   (python-mode . eglot-ensure)
   :custom
+  (python-shell-extra-pythonpaths
+   (mapcar #'expand-file-name *python-shell-extra-pythonpaths*))
   (python-indent-offset 4)
   (python-shell-completion-native-enable
    (not (eq system-type 'darwin))
@@ -788,9 +790,9 @@ when called interactively."
 ;; ccls: C/C++ backend for LSP
 (use-package ccls
   :ensure t
-  :after eglot
-  :hook
-  ((c-mode c++-mode) . eglot-ensure)
+  ;; :after eglot
+  ;; :hook
+  ;; ((c-mode c++-mode) . eglot-ensure)
   :custom
   (ccls-executable *ccls-binary*))
 

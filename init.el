@@ -338,6 +338,12 @@ and line truncation."
   (doc-view-continuous t
    "Change page when scrolling beyond the top/bottom"))
 
+;; Eldoc configuration
+(use-package eldoc
+  :custom
+  (eldoc-echo-area-prefer-doc-buffer t)
+  (eldoc-idle-delay 0.3))
+
 ;; GUI browser configuration
 (use-package browse-url
   :custom

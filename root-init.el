@@ -1,6 +1,6 @@
-;;  root-init.el --- A minimal terminal-based Emacs init configuration for root users
+;;  root-init.el --- A minimal terminal-based Emacs init configuration for root users -*- lexical-binding:t; coding:utf-8 -*-
 ;;  Author: Lorenzo Mella <lorenzo.mella@hotmail.it>
-;;  Copyright (C) 2021 Lorenzo Mella
+;;  Copyright (C) 2021-2022 Lorenzo Mella
 
 
 ;; The configuration only relies on a basic Emacs (25+) installation. No packages from external repos are used.
@@ -37,7 +37,8 @@
 (ido-mode)
 (ido-everywhere)
 
-(if (boundp 'fido-mode)	; fido is just icomplete with ido behavior (introduced in Emacs 27?)
+;; fido is just icomplete with ido behavior (introduced in Emacs 27)
+(if (boundp 'fido-mode)
     (fido-mode)
   (icomplete-mode))
 
@@ -71,7 +72,7 @@
 (dolist (mode (list #'subword-mode
 		    #'show-paren-mode
 		    (if (version< emacs-version "26.1")
-			#'linum-mode ; display-line-numbers optionally replaces linum starting from Emacs 26.1
+			#'linum-mode
 		      #'display-line-numbers-mode)
 		    #'electric-pair-local-mode))
   (add-hook 'prog-mode-hook mode))

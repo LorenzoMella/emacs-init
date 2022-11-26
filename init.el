@@ -659,12 +659,20 @@ and line truncation."
    (prog-mode . yas-minor-mode)))
 
 ;; Eglot support for Microsoft's Language Server Protocol (LSP)
-
 (use-package eglot
   :ensure t
   :config
   (add-to-list 'eglot-server-programs `(c-mode ,*ccls-binary*))
   (add-to-list 'eglot-server-programs `(python-mode ,*pylsp-binary*)))
+
+;; CSV Mode
+(use-package csv-mode
+  :ensure t
+  :defer t
+  :hook
+  (csv-mode . csv-align-mode)
+  (csv-mode . csv-header-line)
+  (csv-mode . display-line-numbers-mode))
 
 ;; ESS - Emacs Speaks Statistics: R and R Markdown suite
 

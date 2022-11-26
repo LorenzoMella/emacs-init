@@ -17,11 +17,11 @@
 
 
 ;; Face families meant to replace the placeholder fonts specified in faces.el
-(defvar-local *face-fixed-pitch-family* "Liberation Mono")
+(defvar-local *face-fixed-pitch-family* "Monospace")
 
-(defvar-local *face-fixed-pitch-serif-family* "Nimbus Mono")
+(defvar-local *face-fixed-pitch-serif-family* "Monospace Serif")
 
-(defvar-local *face-variable-pitch-family* "DejaVu Serif")
+(defvar-local *face-variable-pitch-family* "Sans Serif")
 
 ;; Binaries and paths
 (defvar *org-agenda-paths* '())
@@ -47,9 +47,6 @@
 (defvar *additional-texinfo-directories* '("/opt/local/share/info")
   "List of the nonstandard texinfo paths.")
 
-(defvar *additional-python-source-paths* '("~/.local/site_packages/")
-  "Paths to be added to `python-shell-extra-pythonpaths'")
-
 (defvar *python-virtual-environment-home-path* "~/.virtualenvs"
   "The directory where the Python Virtual Environments are located. Ignored if nil.")
 
@@ -59,7 +56,8 @@
 (defvar *additional-bin-paths* '("~/.local/bin")
   "List of paths to additional binaries.")
 
-(defvar *python-shell-extra-pythonpaths* '("~/projects/common_packages"))
+(defvar *python-shell-extra-pythonpaths* '("~/.local/site_packages")
+  "Paths to be added to `python-shell-extra-pythonpaths'")
 
 (defvar *preferred-sql-product* 'postgres
   "The most likely SQL dialect in use (a symbol).")
@@ -437,7 +435,6 @@ and line truncation."
   (display-time-interval 1)
   (display-time-default-load-average nil)
   (display-time-format "%a %d %b %y %T"))
->>>>>>> master
 
 ;; Isolate themes not managed by `package' or `use-package' (e.g., user-created ones)
 (let ((theme-directory (expand-file-name "themes" user-emacs-directory)))
@@ -824,6 +821,13 @@ when called interactively."
     (forward-line)))
 
 (use-package python
+  :init
+  (setenv "PYTHONPATH"
+	  (string-join
+	   (mapcar #'expand-file-name *python-shell-extra-pythonpaths*)
+	   path-separator))
+  (when *python-virtual-environment-home-path*
+    (setenv "WORKON_HOME" (expand-file-name *python-virtual-environment-home-path*)))
   :custom
   (python-shell-extra-pythonpaths
    (mapcar #'expand-file-name *python-shell-extra-pythonpaths*))
@@ -835,14 +839,7 @@ when called interactively."
   (:map python-mode-map
    ;; Remaps that mimic the behavior of ESS
    ("C-c C-b" . python-shell-send-buffer)
-   ("C-c C-c" . python-shell-send-paragraph-or-region))
-  :init					; these can be done with local varialbes
-  (setenv "PYTHONPATH"
-	  (string-join
-	   (mapcar #'expand-file-name *additional-python-source-paths*)
-	   path-separator))
-  (when *python-virtual-environment-home-path*
-    (setenv "WORKON_HOME" (expand-file-name *python-virtual-environment-home-path*))))
+   ("C-c C-c" . python-shell-send-paragraph-or-region)))
 
 ;; ipython-shell-send: send snippets to inferior IPython shells (I
 ;; haven't tested it well)

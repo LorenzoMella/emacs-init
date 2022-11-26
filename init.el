@@ -90,13 +90,6 @@ Set it to `nil' to append to this file.")
 
 (defalias 'init-show 'lm/custom-settings)
 
-(defun lm/toggle-fullscreen-w/o-ns-native-behavior ()
-  (interactive)
-  (when (and (equal (window-system) 'ns)
-	     (not (null ns-use-native-fullscreen)))
-    (setq ns-use-native-fullscreen nil))
-  (toggle-frame-fullscreen))
-
 (defun lm/frame-resize-and-center (width-fraction)
   "Resizes the frame to about two thirds of the screen."
   (interactive (list 0.618)) ; Using the inverted golden ratio in place of 2/3
@@ -201,14 +194,10 @@ and line truncation."
 
 ;; Window resizing
 (unbind-key "s-m")			; Normally bound to `iconify-frame' on MacOS
-(bind-key "s-m f" #'lm/toggle-fullscreen-w/o-ns-native-behavior)
-
-
-;; Old-style fullscreen mode on MacOS (i.e., not in its own space, GTK-style)
-
-
+(bind-key "s-m f" #'toggle-frame-fullscreen)
 (bind-key "s-m m" #'toggle-frame-maximized)
 (bind-key "s-m c" #'lm/frame-resize-and-center)
+(bind-key "s-m s" #'window-toggle-side-windows)
 
 ;; Remap keys to more convenient commands
 (bind-key [remap kill-buffer] #'kill-current-buffer)

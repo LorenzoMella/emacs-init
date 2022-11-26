@@ -745,7 +745,12 @@ when called interactively."
   :custom
   (pyvenv-exec-shell *shell-binary*)
   :hook
-  ((python-mode inferior-python-mode) . pyvenv-mode))
+  ((python-mode inferior-python-mode) . pyvenv-mode)
+  :bind
+  ("C-c v w" . pyvenv-workon)
+  ("C-c v a" . pyvenv-activate)
+  ("C-c v d" . pyvenv-deactivate)
+  ("C-c v r" . pyvenv-restart-python))
 
 ;; EIN: Jupyter support (experimental setup: doesn't support lsp)
 (use-package ein

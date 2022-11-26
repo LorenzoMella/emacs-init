@@ -24,7 +24,7 @@
 (defvar-local *face-variable-pitch-family* "DejaVu Serif")
 
 ;; Binaries and paths
-(defvar *org-agenda-paths* '("~/notes/tasks/"))
+(defvar *org-agenda-paths* '())
 
 (defvar *shell-binary* (getenv "SHELL") ; using the default for the current user
   "Preferred shell to use with term/ansi-term.")
@@ -58,6 +58,8 @@
 
 (defvar *additional-bin-paths* '("~/.local/bin")
   "List of paths to additional binaries.")
+
+(defvar *python-shell-extra-pythonpaths* '("~/projects/common_packages"))
 
 (defvar *preferred-sql-product* 'postgres
   "The most likely SQL dialect in use (a symbol).")
@@ -184,9 +186,17 @@ and line truncation."
 ;;;
 
 
-;; Remove "legacy" GUI widgets
+;; Remove useless GUI widgets
+(menu-bar-mode -1)
 (tool-bar-mode -1)
 (scroll-bar-mode -1)
+
+;; Tab Bar Mode
+(use-package time
+  :custom
+  (display-time-interval 1)
+  (display-time-default-load-average nil)
+  (display-time-format "%a %d-%m-%Y %k:%M:%S"))
 
 ;; Remap commands to more convenient keys (the defaults still work)
 (bind-key "M-o" #'other-window)
@@ -202,7 +212,6 @@ and line truncation."
        (bind-key "s-8" 'iso-transl-ctl-x-8-map key-translation-map)
        (bind-key "s-8 RET" #'insert-char)))
   
-
 ;; Window-resizing keybindings
 (unbind-key "s-m") ; Normally bound to `iconify-frame' on MacOS. Use `C-z' instead
 (bind-key "s-m f" #'toggle-frame-fullscreen)
@@ -291,6 +300,22 @@ and line truncation."
   :hook
   (package-menu-mode . hl-line-mode))
 
+;; Display Buffer customization (stub)
+(use-package window
+  :custom
+  (display-buffer-alist
+   '(("*Python*"
+      display-buffer-in-side-window
+      (side . bottom)
+      (slot . 1)
+      (window-height . 0.40))
+     (".*eldoc.*"
+      display-buffer-in-side-window
+      (side . bottom)
+      (slot . 0)
+      (window-height . 0.40)
+      (window-parameters . (list (no-other-window . t)))))))
+
 ;; Org customization
 
 (use-package org
@@ -301,6 +326,7 @@ and line truncation."
   (org-ellipsis " ▸")
   ;; These work well (and together) on recent org-mode versions
   (org-special-ctrl-a/e (not (version< org-version "9.5")))
+  (org-agenda-files (mapcar #'expand-file-name *org-agenda-paths*))
   ;; (org-agenda-files (list (expand-file-name "~/notes")))
   (org-todo-keywords '((sequence "TODO(t)"
 				 "WAITING(w)"
@@ -361,6 +387,12 @@ and line truncation."
   (doc-view-continuous t
    "Change page when scrolling beyond the top/bottom"))
 
+;; Eldoc configuration
+(use-package eldoc
+  :custom
+  (eldoc-echo-area-prefer-doc-buffer t)
+  (eldoc-idle-delay 0.3))
+
 ;; GUI browser configuration
 (use-package browse-url
   :custom
@@ -405,6 +437,7 @@ and line truncation."
   (display-time-interval 1)
   (display-time-default-load-average nil)
   (display-time-format "%a %d %b %y %T"))
+>>>>>>> master
 
 ;; Isolate themes not managed by `package' or `use-package' (e.g., user-created ones)
 (let ((theme-directory (expand-file-name "themes" user-emacs-directory)))
@@ -715,7 +748,6 @@ and line truncation."
   (csv-mode . hl-line-mode))
 
 ;; Eglot support for Microsoft's Language Server Protocol (LSP)
-
 (use-package eglot
   :ensure t
   :hook
@@ -793,6 +825,8 @@ when called interactively."
 
 (use-package python
   :custom
+  (python-shell-extra-pythonpaths
+   (mapcar #'expand-file-name *python-shell-extra-pythonpaths*))
   (python-indent-offset 4)
   (python-shell-completion-native-enable
    (not (eq system-type 'darwin))

@@ -25,7 +25,7 @@
 (defvar-local *face-variable-pitch-family* "DejaVu Serif")
 
 ;; Binaries and paths
-(defvar *org-agenda-paths* '("~/notes/tasks/"))
+(defvar *org-agenda-paths* '())
 
 (defvar *shell-binary* (getenv "SHELL") ; using the default for the current user
   "Preferred shell to use with term/ansi-term.")
@@ -50,6 +50,8 @@
 
 (defvar *additional-bin-paths* '("~/.local/bin")
   "List of paths to additional binaries.")
+
+(defvar *python-shell-extra-pythonpaths* '("~/projects/common_packages"))
 
 (defvar *ein-image-viewer* "/bin/feh --image-bg white"
   "Image viewing program used by the ein package (with arguments).")

@@ -134,12 +134,11 @@ and line truncation."
 
 (require 'package)
 
-;; Add references to online repositories other than GNU ELPA
-(add-to-list 'package-archives '("nongnu" . "https://elpa.nongnu.org/nongnu/"))
+;; Add references to additional package repositories
+(when (version< emacs-version "28")
+  (add-to-list 'package-archives '("nongnu" . "https://elpa.nongnu.org/nongnu/")))
 (add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/"))
-;; Use the stable Melpa repo (as a replacement for Melpa) for a more curated experience.
-;; I'm not using it in this config because the package ccls is not in Stable yet!
-;; (add-to-list 'package-archives '("s-melpa" . "https://stable.melpa.org/packages/"))
+;; Alternatively, use Melpa Stable: https://stable.melpa.org/packages/ (untested)
 
 (package-initialize)
 

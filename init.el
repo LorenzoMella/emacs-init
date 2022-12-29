@@ -297,22 +297,6 @@ and line truncation."
   :hook
   (package-menu-mode . hl-line-mode))
 
-;; Display Buffer customization (stub)
-(use-package window
-  :custom
-  (display-buffer-alist
-   '(("*Python*"
-      display-buffer-in-side-window
-      (side . bottom)
-      (slot . 1)
-      (window-height . 0.40))
-     (".*eldoc.*"
-      display-buffer-in-side-window
-      (side . bottom)
-      (slot . 0)
-      (window-height . 0.40)
-      (window-parameters . (list (no-other-window . t)))))))
-
 ;; Org customization
 
 (use-package org

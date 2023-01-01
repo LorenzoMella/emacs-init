@@ -41,7 +41,7 @@
 (defvar *ccls-binary* "/usr/bin/ccls"
   "Path to the ccls executable.")
 
-(defvar *lisp-interpreter* "lisp"
+(defvar *lisp-interpreter* "sbcl"
   "The name (or path) of the Common Lisp interpreter of choice)")
 
 (defvar *additional-texinfo-directories* '("/opt/local/share/info")
@@ -270,10 +270,9 @@ and line truncation."
       (slot . 0)
       (dedicated . t)
       (window-parameters . ((no-other-window . t))))
-     ("\\*[Pp]ython.*"
-      display-buffer-in-side-window
-      (side . bottom)
-      (slot . 1)
+     ("\\*Python.*"
+      display-buffer-in-direction
+      (direction . right)
       (dedicated . t)))))
 
 ;; Dired customization
@@ -300,22 +299,6 @@ and line truncation."
   :hook
   (package-menu-mode . hl-line-mode))
 
-;; Display Buffer customization (stub)
-(use-package window
-  :custom
-  (display-buffer-alist
-   '(("*Python*"
-      display-buffer-in-side-window
-      (side . bottom)
-      (slot . 1)
-      (window-height . 0.40))
-     (".*eldoc.*"
-      display-buffer-in-side-window
-      (side . bottom)
-      (slot . 0)
-      (window-height . 0.40)
-      (window-parameters . (list (no-other-window . t)))))))
-
 ;; Org customization
 
 (use-package org
@@ -335,6 +318,7 @@ and line truncation."
 				 "DONE(d)")))
   :hook
   (org-mode . visual-line-mode)
+  (org-mode . org-indent-mode)
   (org-agenda-mode . hl-line-mode)
   :bind
   (:map org-mode-map
@@ -437,7 +421,6 @@ and line truncation."
   (display-time-interval 1)
   (display-time-default-load-average nil)
   (display-time-format "%a %d %b %y %T"))
->>>>>>> master
 
 ;; Isolate themes not managed by `package' or `use-package' (e.g., user-created ones)
 (let ((theme-directory (expand-file-name "themes" user-emacs-directory)))
@@ -582,7 +565,9 @@ and line truncation."
 (use-package avy
   :ensure t
   :bind
-  ("C-;" . avy-goto-char))
+  ("C-;" . avy-goto-char)
+  :custom
+  (avy-style 'words))
 
 ;; Which Key: much needed pop-up help for prefix keymaps
 (use-package which-key

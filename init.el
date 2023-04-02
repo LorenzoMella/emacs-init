@@ -908,13 +908,14 @@ when called interactively."
 
 ;; Common Lisp support
 
+(use-package slime-company
+  :ensure t)
+
 (use-package slime
   :ensure t
   :init
-  (customize-set-variable 'inferior-lisp-program *lisp-interpreter*)
-  ;; :bind
-  ;; (:map scheme-mode-map ("C-c C-p" . slime)) ; in analogy to Python Mode
-)
+  (customize-set-variable 'inferior-lisp-program *lisp-interpreter*))
+  ;; (slime-setup '(slime-company))
 
 ;; Guile-Scheme support
 

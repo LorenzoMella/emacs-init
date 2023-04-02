@@ -243,7 +243,9 @@ and line truncation."
 (customize-set-variable 'fill-column 80)
 
 ;; Quicken many confirmation prompts
-(defalias 'yes-or-no-p 'y-or-n-p)
+(if (version< emacs-version "28.1")
+    (defalias 'yes-or-no-p 'y-or-n-p) ; the old way
+  (customize-set-variable 'use-short-answers t))
 
 ;; Mouse scrolling configuration
 (customize-set-variable 'mouse-wheel-tilt-scroll t

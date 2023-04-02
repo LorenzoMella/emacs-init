@@ -17,11 +17,11 @@
 
 
 ;; Face families meant to replace the placeholder fonts specified in faces.el
-(defvar-local *face-fixed-pitch-family* "Liberation Mono")
+(defvar *face-fixed-pitch-family* "Liberation Mono")
 
-(defvar-local *face-fixed-pitch-serif-family* "Nimbus Mono")
+(defvar *face-fixed-pitch-serif-family* "Nimbus Mono")
 
-(defvar-local *face-variable-pitch-family* "DejaVu Serif")
+(defvar *face-variable-pitch-family* "DejaVu Sans")
 
 ;; Binaries and paths
 (defvar *org-agenda-paths* '())
@@ -286,8 +286,8 @@ and line truncation."
    "nil on Macs to avoid a warning")
   (dired-listing-switches
    (if (eq system-type 'gnu/linux)
-       "-lahFb --group-directories-first"
-     "-lahFb")
+       "-lahF --group-directories-first"
+     "-lahF")
    "ls -l readability adjustments. Group directories first when using coreutils ls")
   (dired-ls-F-marks-symlinks (eq system-type 'darwin)
 			     "Rename symlinks correctly, when marked with '@' by ls -lF")
@@ -508,6 +508,7 @@ and line truncation."
 (use-package vterm
   :ensure t
   :custom
+  (vterm-shell *shell-binary*)
   (vterm-max-scrollback 10000))
 
 
@@ -838,6 +839,7 @@ when called interactively."
 ;; FIX: I don't remember the meaning of hook and shell specifications
 (use-package pyvenv
   :ensure t
+  :commands pyvenv-create
   :custom
   (pyvenv-exec-shell *shell-binary*)
   :bind
@@ -926,16 +928,12 @@ when called interactively."
   :ensure t
   :after geiser
   :custom
-  (geiser-debug-jump-to-debug-p nil
-   "Don't jump to the debug buffer")
-  (geiser-debug-show-debug-p nil
-   "Don't show the debug buffer")
   (geiser-guile-manual-lookup-other-window-p t
    "Open info entries in another window")
   :bind
   (:map scheme-mode-map ("C-c C-p" . run-geiser))) ; in analogy to Python Mode
 
-;; Meme "Wizard Book" in Texinfo format. Read it with `M-x info'.
+;; Meme "Wizard Book" in Info format. Read it with `M-x info'.
 ;; Also worth checking:
 ;; - a homebrew LaTeX version at:
 ;;   https://github.com/sarabander/sicp-pdf.git

@@ -276,6 +276,12 @@ and line truncation."
       display-buffer-in-direction
       (direction . right)))))
 
+;; Files customization
+(use-package files
+  :custom
+  (delete-by-moving-to-trash t)
+  (trash-directory (when (eq system-type 'ns)
+		     (expand-file-name "~/.Trash"))))
 
 ;; Dired customization
 (use-package dired

@@ -287,6 +287,9 @@ and line truncation."
 (use-package dired
   :init
   (require 'dired-x)
+  :bind
+  (:map dired-mode-map
+    ("C-c a" . auto-revert-mode))
   :custom
   (dired-auto-revert-buffer t
    "Refresh the dired buffer whenever unburied")
@@ -749,6 +752,9 @@ and line truncation."
   :ensure t
   :hook
   ((python-mode c-mode c++-mode) . eglot-ensure)
+  :bind
+  (:map eglot-mode-map
+	("S-<f6>" . eglot-rename))
   :config
   (add-to-list 'eglot-server-programs `(c-mode ,*ccls-binary*))
   (add-to-list 'eglot-server-programs `(python-mode ,*pylsp-binary*)))

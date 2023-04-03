@@ -274,8 +274,8 @@ and line truncation."
       (window-parameters . ((no-other-window . t))))
      ("\\*Python.*"
       display-buffer-in-direction
-      (direction . right)
-      (dedicated . t)))))
+      (direction . right)))))
+
 
 ;; Dired customization
 (use-package dired
@@ -404,8 +404,8 @@ and line truncation."
 
 ;; Optionally transparent frame
 (customize-set-variable 'default-frame-alist
-			(append default-frame-alist
-				`((alpha . ,*transparency-level*))))
+			(cons default-frame-alist
+			      `((alpha . ,*transparency-level*))))
 
 ;; Replace the default scratch message
 (customize-set-variable 'initial-scratch-message *initial-scratch-message*)
@@ -424,7 +424,9 @@ and line truncation."
   (display-time-default-load-average nil)
   (display-time-format "%a %d %b %y %T"))
 
-;; Isolate themes not managed by `package' or `use-package' (e.g., user-created ones)
+;; Theme overlays
+
+;; Isolate themes not managed by the package managers (e.g., user-created ones)
 (let ((theme-directory (expand-file-name "themes" user-emacs-directory)))
   (when (file-exists-p theme-directory)
     (customize-set-variable 'custom-theme-directory theme-directory)))
@@ -657,7 +659,8 @@ and line truncation."
 ;; Convenient minor modes for programming
 (use-package prog-mode
   :hook
-  ((prog-mode . subword-mode)
+  ((prog.mode . indent-tabs-mode)
+   (prog-mode . subword-mode)
    (prog-mode . show-paren-mode)
    (prog-mode . display-line-numbers-mode)
    (prog-mode . electric-pair-local-mode)))

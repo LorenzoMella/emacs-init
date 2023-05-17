@@ -17,11 +17,11 @@
 
 
 ;; Face families meant to replace the placeholder fonts specified in faces.el
-(defvar-local *face-fixed-pitch-family* "Monospace")
+(defvar *face-fixed-pitch-family* "Monospace")
 
-(defvar-local *face-fixed-pitch-serif-family* "Monospace Serif")
+(defvar *face-fixed-pitch-serif-family* "PT Mono")
 
-(defvar-local *face-variable-pitch-family* "Sans Serif")
+(defvar *face-variable-pitch-family* "Sans Serif")
 
 ;; Binaries and paths
 (defvar *shell-binary* (getenv "SHELL") ; using the default for the current user
@@ -86,6 +86,7 @@ Set it to `nil' to append to this file.")
 ;;  |/ /____/\\___/_/   \\__,_/\\__/\\___/_/ /_/ |/\n\n\n"
   "Replacement of the trite *scratch* message with ASCII art.")
 
+(defvar *dashboard-logo* 'logo)
 
 ;;;
 ;;; General purpose custom functions

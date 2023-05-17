@@ -188,10 +188,19 @@ and line truncation."
 ;; Remap commands to more convenient keys (the defaults still work)
 (bind-key "M-o" #'other-window)
 (bind-key "C-M-;" #'comment-line)
-(bind-key "s-=" #'text-scale-increase)
-(bind-key "s--" #'text-scale-decrease)
+(when (not (eq (window-system) 'ns))
+  (bind-key "s-=" #'text-scale-increase)
+  (bind-key "s--" #'text-scale-decrease))
 (bind-key "s-8" 'iso-transl-ctl-x-8-map key-translation-map) ; Remap the insert-char shortcuts
 (bind-key "s-8 RET" #'insert-char) ; Similar remap of the related `insert-char'
+(unless (eq (window-system) 'ns)   ; Already in place in MacOS
+  (bind-key "s-u" #'revert-buffer))
+
+;; Unbind toxic MacOS keybindings
+(when (eq (window-system) 'ns)
+  (unbind-key "s-o")
+  (unbind-key "s-&")
+  (unbind-key "s-k"))
 
 ;; Window-resizing keybindings
 (unbind-key "s-m") ; Normally bound to `iconify-frame' on MacOS. Use `C-z' instead
@@ -210,6 +219,8 @@ and line truncation."
 
 ;; Other keybindings
 (bind-key "s-m `" #'lm/cycle-line-wrap-modes)
+(bind-key "C-c w w" #'whitespace-mode)
+(bind-key "C-c w c" #'whitespace-cleanup)
 
 ;; Always visualize column numbers
 (column-number-mode)
@@ -229,16 +240,19 @@ and line truncation."
   (customize-set-variable 'use-short-answers t))
 
 ;; Mouse scrolling configuration
-(customize-set-variable 'mouse-wheel-tilt-scroll t
-  "Horizontal scrolling on touchpads,Apple Magic Mouse and mice with lateral wheel click")
-(customize-set-variable 'mouse-wheel-flip-direction t
-  "Natural orientation for horizontal scrolling")
-;; These are for scrolling even when the Emacs frame is
-;; in the background, to achieve Mac-like behavior
-;; (works under Gnome 3.x and 40. Untested on other gtk WMs)
-(when (eq (window-system) 'x)
-  (bind-key "<s-mouse-4>" #'mwheel-scroll)
-  (bind-key "<s-mouse-5>" #'mwheel-scroll))
+(use-package mwheel
+  :custom
+  (mouse-wheel-tilt-scroll t
+    "Horizontal scrolling on touchpads,Apple Magic Mouse and mice with lateral wheel click")
+  (mouse-wheel-flip-direction t
+    "Natural orientation for horizontal scrolling")
+  :config
+  ;; These are for scrolling even when the Emacs frame is in the background, to
+  ;; achieve Mac-like behavior (works under Gnome Shell 3.x and 40-43. Untested on
+  ;; other gtk WMs)
+  (when (eq (window-system) 'x)
+    (bind-key "<s-mouse-4>" #'mwheel-scroll)
+    (bind-key "<s-mouse-5>" #'mwheel-scroll)))
 
 ;; Display Buffer customization
 (use-package window
@@ -263,6 +277,11 @@ and line truncation."
 (use-package dired
   :init
   (require 'dired-x)
+  :bind
+  (:map dired-mode-map
+    ("r" . lm/dired-find-file-read-only)
+    ("C-c a" . auto-revert-mode)
+    ("<mouse-2>" . dired-find-file))
   :custom
   (dired-auto-revert-buffer t
    "Refresh the dired buffer whenever unburied")
@@ -708,6 +727,9 @@ and line truncation."
 
 (use-package eglot
   :ensure t
+  :bind
+  (:map eglot-mode-map
+    ("S-<f6>" . eglot-rename))
   :hook
   ((python-mode c-mode c++-mode) . eglot-ensure)
   :config
@@ -813,6 +835,7 @@ when called interactively."
   (pyvenv-exec-shell *shell-binary*)
   :bind
   ("C-c v a" . pyvenv-activate)
+  ("C-c v c" . pyvenv-create)
   ("C-c v d" . pyvenv-deactivate)
   ("C-c v w" . pyvenv-workon)
   ("C-c v r" . pyvenv-restart-python)

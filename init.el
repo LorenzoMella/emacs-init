@@ -134,18 +134,16 @@ and line truncation."
 (require 'package)
 
 ;; Add references to online repositories other than GNU ELPA
-(add-to-list 'package-archives '("nongnu" . "https://elpa.nongnu.org/nongnu/"))
+(add-to-list 'package-archives '("nongnu" . "https://elpa.nongnu.org/nongnu/")) ; only effective when emacs-version < 28
 (add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/"))
-;; Use the stable Melpa repo (as a replacement for Melpa) for a more curated experience.
-;; I'm not using it in this config because the package ccls is not in Stable yet!
-;; (add-to-list 'package-archives '("s-melpa" . "https://stable.melpa.org/packages/"))
 
 (package-initialize)
 
 ;; Package management will be handled by use-package
-(unless (package-installed-p 'use-package)
-  (package-refresh-contents)
-  (package-install 'use-package))
+(when (version< emacs-version "29.0.60") ; earliest version that I verified comes with `use-package'
+  (unless (package-installed-p 'use-package)
+    (package-refresh-contents)
+    (package-install 'use-package)))
 
 ;; Keep ELPA keys up to date
 (use-package gnu-elpa-keyring-update
@@ -226,7 +224,9 @@ and line truncation."
 (customize-set-variable 'fill-column 80)
 
 ;; Quicken many confirmation prompts
-(defalias 'yes-or-no-p 'y-or-n-p)
+(if (version< emacs-version "28")
+    (defalias 'yes-or-no-p 'y-or-n-p)
+  (customize-set-variable 'use-short-answers t))
 
 ;; Mouse scrolling configuration
 (customize-set-variable 'mouse-wheel-tilt-scroll t

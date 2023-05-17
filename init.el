@@ -662,6 +662,12 @@ and line truncation."
   :bind
   ("C-x g" . magit-status))
 
+;; RealGUD: better debugger interface
+;; TODO keybindings, custom variables, and faces
+(use-package realgud
+  :ensure t
+  :defer t)
+
 ;; Company: inline autocompletion engine
 (use-package company
   :ensure t

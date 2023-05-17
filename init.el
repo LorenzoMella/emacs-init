@@ -530,6 +530,8 @@ and line truncation."
 ;; Avy: jump easily to any visible text in every frame/window
 (use-package avy
   :ensure t
+  :custom
+  (avy-style 'words)
   :bind
   ("C-;" . avy-goto-char))
 

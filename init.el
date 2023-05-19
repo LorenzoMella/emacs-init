@@ -932,13 +932,25 @@ when called interactively."
 ;; Common Lisp support
 
 (use-package slime-company
-  :ensure t)
+  :ensure t
+  :config
+  (add-to-list 'company-backends #'company-slime))
 
 (use-package slime
   :ensure t
   :init
-  (customize-set-variable 'inferior-lisp-program *lisp-interpreter*))
-  ;; (slime-setup '(slime-company))
+  (customize-set-variable 'inferior-lisp-program *lisp-interpreter*)
+  :hook
+  ;; Browsing the Web 1.0 CLHS is comfier from within Emacs
+  (lisp-mode . (lambda ()
+		 (setq-local browse-url-browser-function
+			     (lambda (a &optional b)
+			       ;; (other-window 1)
+			       (eww-browse-url a t)))))
+  :bind
+  (:map lisp-mode-map
+    ;; open the SLIME REPL instead of the native Lisp one
+    ("C-c C-z" . slime)))
 
 ;; Guile-Scheme support
 

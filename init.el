@@ -281,7 +281,9 @@ and line truncation."
   :custom
   (delete-by-moving-to-trash t)
   (trash-directory (when (eq system-type 'ns)
-		     (expand-file-name "~/.Trash"))))
+		     (expand-file-name "~/.Trash")))
+  :config
+  (push '("\\.sbclrc" . lisp-mode) auto-mode-alist))
 
 ;; Dired customization
 (use-package dired
@@ -380,7 +382,9 @@ and line truncation."
 (use-package doc-view
   :custom
   (doc-view-continuous t
-   "Change page when scrolling beyond the top/bottom"))
+   "Change page when scrolling beyond the top/bottom")
+  (doc-view-resolution 300
+   "DPIs used to render the pdf pages"))
 
 ;; Eldoc configuration
 (use-package eldoc
@@ -946,9 +950,7 @@ when called interactively."
   :after geiser
   :custom
   (geiser-guile-manual-lookup-other-window-p t
-   "Open info entries in another window")
-  :bind
-  (:map scheme-mode-map ("C-c C-p" . run-geiser))) ; in analogy to Python Mode
+   "Open info entries in another window"))
 
 ;; Meme "Wizard Book" in Info format. Read it with `M-x info'.
 ;; Also worth checking:

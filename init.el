@@ -41,7 +41,7 @@
 (defvar *ccls-binary* "/usr/bin/ccls"
   "Path to the ccls executable.")
 
-(defvar *lisp-interpreter* "lisp"
+(defvar *lisp-interpreter* "sbcl"
   "The name (or path) of the Common Lisp interpreter of choice)")
 
 (defvar *additional-texinfo-directories* '("/opt/local/share/info")
@@ -240,7 +240,9 @@ and line truncation."
 (customize-set-variable 'fill-column 80)
 
 ;; Quicken many confirmation prompts
-(defalias 'yes-or-no-p 'y-or-n-p)
+(if (version< emacs-version "28.1")
+    (defalias 'yes-or-no-p 'y-or-n-p) ; the old way
+  (customize-set-variable 'use-short-answers t))
 
 ;; Mouse scrolling configuration
 (customize-set-variable 'mouse-wheel-tilt-scroll t
@@ -267,16 +269,26 @@ and line truncation."
       (slot . 0)
       (dedicated . t)
       (window-parameters . ((no-other-window . t))))
-     ("\\*[Pp]ython.*"
-      display-buffer-in-side-window
-      (side . bottom)
-      (slot . 1)
-      (dedicated . t)))))
+     ("\\*Python.*"
+      display-buffer-in-direction
+      (direction . right)))))
+
+;; Files customization
+(use-package files
+  :custom
+  (delete-by-moving-to-trash t)
+  (trash-directory (when (eq system-type 'ns)
+		     (expand-file-name "~/.Trash")))
+  :config
+  (push '("\\.sbclrc" . lisp-mode) auto-mode-alist))
 
 ;; Dired customization
 (use-package dired
   :init
   (require 'dired-x)
+  :bind
+  (:map dired-mode-map
+    ("C-c a" . auto-revert-mode))
   :custom
   (dired-auto-revert-buffer t
    "Refresh the dired buffer whenever unburied")
@@ -284,8 +296,8 @@ and line truncation."
    "nil on Macs to avoid a warning")
   (dired-listing-switches
    (if (eq system-type 'gnu/linux)
-       "-lahFb --group-directories-first"
-     "-lahFb")
+       "-lahF --group-directories-first"
+     "-lahF")
    "ls -l readability adjustments. Group directories first when using coreutils ls")
   (dired-ls-F-marks-symlinks (eq system-type 'darwin)
 			     "Rename symlinks correctly, when marked with '@' by ls -lF")
@@ -316,6 +328,7 @@ and line truncation."
 				 "DONE(d)")))
   :hook
   (org-mode . visual-line-mode)
+  (org-mode . org-indent-mode)
   (org-agenda-mode . hl-line-mode)
   :bind
   (:map org-mode-map
@@ -366,7 +379,9 @@ and line truncation."
 (use-package doc-view
   :custom
   (doc-view-continuous t
-   "Change page when scrolling beyond the top/bottom"))
+   "Change page when scrolling beyond the top/bottom")
+  (doc-view-resolution 300
+   "DPIs used to render the pdf pages"))
 
 ;; Eldoc configuration
 (use-package eldoc
@@ -399,8 +414,8 @@ and line truncation."
 
 ;; Optionally transparent frame
 (customize-set-variable 'default-frame-alist
-			(append default-frame-alist
-				`((alpha . ,*transparency-level*))))
+			(cons default-frame-alist
+			      `((alpha . ,*transparency-level*))))
 
 ;; Replace the default scratch message
 (customize-set-variable 'initial-scratch-message *initial-scratch-message*)
@@ -419,7 +434,9 @@ and line truncation."
   (display-time-default-load-average nil)
   (display-time-format "%a %d %b %y %T"))
 
-;; Isolate themes not managed by `package' or `use-package' (e.g., user-created ones)
+;; Theme overlays
+
+;; Isolate themes not managed by the package managers (e.g., user-created ones)
 (let ((theme-directory (expand-file-name "themes" user-emacs-directory)))
   (when (file-exists-p theme-directory)
     (customize-set-variable 'custom-theme-directory theme-directory)))
@@ -505,6 +522,7 @@ and line truncation."
 (use-package vterm
   :ensure t
   :custom
+  (vterm-shell *shell-binary*)
   (vterm-max-scrollback 10000))
 
 
@@ -562,7 +580,9 @@ and line truncation."
 (use-package avy
   :ensure t
   :bind
-  ("C-;" . avy-goto-char))
+  ("C-;" . avy-goto-char)
+  :custom
+  (avy-style 'words))
 
 ;; Which Key: much needed pop-up help for prefix keymaps
 (use-package which-key
@@ -649,7 +669,8 @@ and line truncation."
 ;; Convenient minor modes for programming
 (use-package prog-mode
   :hook
-  ((prog-mode . subword-mode)
+  ((prog.mode . indent-tabs-mode)
+   (prog-mode . subword-mode)
    (prog-mode . show-paren-mode)
    (prog-mode . display-line-numbers-mode)
    (prog-mode . electric-pair-local-mode)))
@@ -732,6 +753,9 @@ and line truncation."
   :ensure t
   :hook
   ((python-mode c-mode c++-mode) . eglot-ensure)
+  :bind
+  (:map eglot-mode-map
+	("S-<f6>" . eglot-rename))
   :config
   (add-to-list 'eglot-server-programs `(c-mode ,*ccls-binary*))
   (add-to-list 'eglot-server-programs `(python-mode ,*pylsp-binary*)))
@@ -833,6 +857,7 @@ when called interactively."
 ;; FIX: I don't remember the meaning of hook and shell specifications
 (use-package pyvenv
   :ensure t
+  :commands pyvenv-create
   :custom
   (pyvenv-exec-shell *shell-binary*)
   :bind
@@ -903,13 +928,26 @@ when called interactively."
 
 ;; Common Lisp support
 
+(use-package slime-company
+  :ensure t
+  :config
+  (add-to-list 'company-backends #'company-slime))
+
 (use-package slime
   :ensure t
   :init
   (customize-set-variable 'inferior-lisp-program *lisp-interpreter*)
-  ;; :bind
-  ;; (:map scheme-mode-map ("C-c C-p" . slime)) ; in analogy to Python Mode
-)
+  :hook
+  ;; Browsing the Web 1.0 CLHS is comfier from within Emacs
+  (lisp-mode . (lambda ()
+		 (setq-local browse-url-browser-function
+			     (lambda (a &optional b)
+			       ;; (other-window 1)
+			       (eww-browse-url a t)))))
+  :bind
+  (:map lisp-mode-map
+    ;; open the SLIME REPL instead of the native Lisp one
+    ("C-c C-z" . slime)))
 
 ;; Guile-Scheme support
 
@@ -920,16 +958,10 @@ when called interactively."
   :ensure t
   :after geiser
   :custom
-  (geiser-debug-jump-to-debug-p nil
-   "Don't jump to the debug buffer")
-  (geiser-debug-show-debug-p nil
-   "Don't show the debug buffer")
   (geiser-guile-manual-lookup-other-window-p t
-   "Open info entries in another window")
-  :bind
-  (:map scheme-mode-map ("C-c C-p" . run-geiser))) ; in analogy to Python Mode
+   "Open info entries in another window"))
 
-;; Meme "Wizard Book" in Texinfo format. Read it with `M-x info'.
+;; Meme "Wizard Book" in Info format. Read it with `M-x info'.
 ;; Also worth checking:
 ;; - a homebrew LaTeX version at:
 ;;   https://github.com/sarabander/sicp-pdf.git

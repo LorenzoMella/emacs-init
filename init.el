@@ -242,17 +242,23 @@ and line truncation."
     (defalias 'yes-or-no-p 'y-or-n-p)
   (customize-set-variable 'use-short-answers t))
 
-;; Mouse scrolling configuration
+;; Mouse configuration
+
+(use-package xt-mouse
+  :init
+  (when (not (window-system))
+    (xterm-mouse-mode)))
+
 (use-package mwheel
   :custom
   (mouse-wheel-tilt-scroll t
-    "Horizontal scrolling on touchpads,Apple Magic Mouse and mice with lateral wheel click")
+    "Horizontal scrolling on touchpads, Apple Magic Mouse and mice with lateral wheel click")
   (mouse-wheel-flip-direction t
     "Natural orientation for horizontal scrolling")
   :config
-  ;; These are for scrolling even when the Emacs frame is in the background, to
-  ;; achieve Mac-like behavior (works under Gnome Shell 3.x and 40-43. Untested on
-  ;; other gtk WMs)
+  ;; These are for scrolling even when the Emacs frame of interest is in not the
+  ;; active GUI window, to achieve Mac-like behavior (works under Gnome Shell
+  ;; 3.x and 40-43)
   (when (eq (window-system) 'x)
     (bind-key "<s-mouse-4>" #'mwheel-scroll)
     (bind-key "<s-mouse-5>" #'mwheel-scroll)))

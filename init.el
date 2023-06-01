@@ -234,6 +234,9 @@ and line truncation."
 ;; Give more leeway to the fill column
 (customize-set-variable 'fill-column 80)
 
+;; No French spacing
+(customize-set-variable 'sentence-end-double-space nil)
+
 ;; Quicken many confirmation prompts
 (if (version< emacs-version "28")
     (defalias 'yes-or-no-p 'y-or-n-p)

@@ -93,12 +93,12 @@ Set it to `nil' to append to this file.")
 ;;;
 
 
-(defun lm/custom-settings ()
+(defun lm/init-show ()
   "Opens the configuration file currently defined as `user-init-file'."
   (interactive)
   (find-file-existing user-init-file))
 
-(defalias 'init-show 'lm/custom-settings)
+(defalias 'init-show 'lm/init-show)
 
 (defun lm/frame-resize-and-center (width-fraction)
   "Resizes the frame to about two thirds of the screen."

@@ -897,13 +897,11 @@ when called interactively."
 
 (use-package slime
   :ensure t
+  :commands slime
   :init
-  (customize-set-variable 'inferior-lisp-program *lisp-interpreter*)
-  ;; :bind
-  ;; (:map scheme-mode-map ("C-c C-p" . slime)) ; in analogy to Python Mode
-)
+  (customize-set-variable 'inferior-lisp-program *lisp-interpreter*))
 
-;; Guile-Scheme support
+;; Guile Scheme support
 
 (use-package geiser
   :ensure t)
@@ -912,17 +910,13 @@ when called interactively."
   :ensure t
   :after geiser
   :custom
-  (geiser-debug-jump-to-debug-p nil
-   "Don't jump to the debug buffer")
-  (geiser-debug-show-debug-p nil
-   "Don't show the debug buffer")
   (geiser-guile-manual-lookup-other-window-p t
    "Open info entries in another window")
   :bind
   (:map scheme-mode-map ("C-c C-p" . run-geiser))) ; in analogy to Python Mode
 
-;; Meme "Wizard Book" in Texinfo format. Read it with `M-x info'.
-;; Also worth checking:
+;; Meme "Wizard Book" in Info format. Read it with `M-x info'.
+;; Also worth checking out:
 ;; - a homebrew LaTeX version at:
 ;;   https://github.com/sarabander/sicp-pdf.git
 ;; - and the original free html format at:

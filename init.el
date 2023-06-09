@@ -212,7 +212,7 @@ and line truncation."
 ;; Remap keys to more convenient commands
 (bind-key [remap kill-buffer] #'kill-current-buffer)
 (bind-key [remap kill-buffer] #'quit-window ; Never kill *scratch* by accident
-	  lisp-interaction-mode-map (string-equal (buffer-name) "*scratch*"))
+	  lisp-interaction-mode-map (string= (buffer-name) "*scratch*"))
 (bind-key [remap capitalize-word] #'capitalize-dwim) ; the dwim-versions work on regions too
 (bind-key [remap downcase-word] #'downcase-dwim)
 (bind-key [remap upcase-word] #'upcase-dwim)
@@ -341,7 +341,7 @@ and line truncation."
   (org-agenda-mode . hl-line-mode)
   :bind
   (:map org-mode-map
-   ("C-c t" . org-tags-view))
+    ("C-c t" . org-tags-view))
   ("C-c a" . org-agenda)
   :config
   ;; Additional code-block expansions
@@ -367,13 +367,13 @@ and line truncation."
   (help-mode . visual-line-mode)
   :custom
   (help-window-select t
-   "Switch focus to a help window automatically, when created"))
+    "Switch focus to a help window automatically, when created"))
 
 ;; Man buffer customization
 (use-package man
   :custom
   (Man-notify-method 'aggressive
-   "Open Man in another window and switch focus to it"))
+    "Open Man in another window and switch focus to it"))
 
 ;; Info mode customization
 (use-package info
@@ -424,7 +424,6 @@ and line truncation."
 ;; Convert non-visible ^L (form feed) into a horizontal line
 (use-package page-break-lines
   :ensure t
-
   :init
   (global-page-break-lines-mode))
 
@@ -554,7 +553,7 @@ and line truncation."
   :custom
   (dashboard-center-content t)
   (dashboard-page-separator "\n\f\n")
-  (dashboard-startup-banner 'logo)
+  (dashboard-startup-banner *dashboard-logo*)
   (dashboard-items '((recents . 10) (bookmarks . 10) (agenda . 10)))
   (dashboard-set-footer nil)
   :config
@@ -731,10 +730,10 @@ and line truncation."
   :custom
   (company-selection-wrap-around t)
   (company-idle-delay 0)
-  (company-minimum-prefix-length 2)
+  (company-minimum-prefix-length 1)
   :hook
-  ((prog-mode . company-mode)
-   (prog-mode . yas-minor-mode)))
+  (prog-mode . company-mode)
+  (prog-mode . yas-minor-mode))
 
 ;; Eldoc configuration
 (use-package eldoc
@@ -842,12 +841,13 @@ when called interactively."
    ;; Remaps that mimic the behavior of ESS
    ("C-c C-b" . python-shell-send-buffer)
    ("C-c C-c" . python-shell-send-paragraph-or-region))
-  :init					; these can be done with local varialbes
+  :init                                         ; these can be done with local varialbes
   (setenv "PYTHONPATH"
 	  (string-join
 	   (mapcar #'expand-file-name *additional-python-source-paths*)
 	   path-separator))
-  (when *python-virtual-environment-home-path*
+  (when *python-virtual-environment-home-path* ; FIXME  why use `when'?
+    ;; The easiest way to let pyvenv etc. know where to create virtual environments
     (setenv "WORKON_HOME" (expand-file-name *python-virtual-environment-home-path*))))
 
 ;; ipython-shell-send: send snippets to inferior IPython shells (I
@@ -884,7 +884,7 @@ when called interactively."
   (ein:output-area-inlined-images nil)
   (ein:jupyter-default-kernel *python-interpreter-binary*)
   :init
-  (with-eval-after-load 'mailcap	; FIX: probably not portable
+  (with-eval-after-load 'mailcap        ; FIX: probably not portable
     (add-to-list 'mailcap-user-mime-data '((viewer . (concat *ein-image-viewer* " %s"))
 					   (type . "image/png")))))
 

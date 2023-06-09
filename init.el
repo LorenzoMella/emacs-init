@@ -695,10 +695,15 @@ and line truncation."
   ("C-x g" . magit-status))
 
 ;; RealGUD: better debugger interface
-;; TODO keybindings, custom variables, and faces
 (use-package realgud
   :ensure t
-  :defer t)
+  :commands (list realgud:pdb realgud:gdb)
+  :bind
+  (:map python-mode-map
+	("C-x C-a C-r" . realgud:pdb)
+	("C-x C-a C-a" . realgud:attach-cmd-buffer)
+   :map c-mode-map ("C-x C-a C-r" . realgud:gdb)
+   :map c++-mode-map ("C-x C-a C-r" . realgud:gdb)))
 
 ;; Company: inline autocompletion engine
 (use-package company

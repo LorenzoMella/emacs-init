@@ -291,6 +291,11 @@ and line truncation."
    "MacOS trash must be set explicitly. The `Put Back' menu option does not work"))
 
 ;; Dired customization
+
+(defun lm/dired-find-file-read-only ()
+  (interactive)
+  (find-file-read-only-other-window (dired-file-name-at-point)))
+
 (use-package dired
   :init
   (require 'dired-x)
@@ -301,16 +306,16 @@ and line truncation."
     ("<mouse-2>" . dired-find-file))
   :custom
   (dired-auto-revert-buffer t
-   "Refresh the dired buffer whenever unburied")
+    "Refresh the dired buffer whenever unburied")
   (dired-use-ls-dired (if (eq system-type 'gnu/linux) 'unspecified)
-   "nil on Macs to avoid a warning")
+    "nil on MacOS to avoid a warning")
   (dired-listing-switches
    (if (eq system-type 'gnu/linux)
        "-lahFb --group-directories-first"
      "-lahFb")
-   "ls -l readability adjustments. Group directories first when using coreutils ls")
+    "ls -l readability adjustments. Group directories first when using coreutils ls")
   (dired-ls-F-marks-symlinks (eq system-type 'darwin)
-			     "Rename symlinks correctly, when marked with '@' by ls -lF")
+    "Rename symlinks correctly, when marked with '@' by ls -lF")
   :hook
   (dired-mode . hl-line-mode))
 

@@ -282,6 +282,13 @@ and line truncation."
    (append tab-bar-format
 	   '(tab-bar-format-align-right tab-bar-format-global))))
 
+;; Files customization
+(use-package files
+  :custom
+  (delete-by-moving-to-trash t)
+  (trash-directory (when (eq system-type 'darwin)
+		     (expand-file-name "~/.Trash"))
+   "MacOS trash must be set explicitly. The `Put Back' menu option does not work"))
 
 ;; Dired customization
 (use-package dired

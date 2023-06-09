@@ -374,8 +374,9 @@ and line truncation."
 ;; Doc View configuration
 (use-package doc-view
   :custom
+  (doc-view-resolution 300) ; increase the DPI count (the default is too conservative)
   (doc-view-continuous t
-   "Change page when scrolling beyond the top/bottom"))
+    "Change page when scrolling beyond the top/bottom"))
 
 ;; GUI browser configuration
 (use-package browse-url

@@ -274,6 +274,14 @@ and line truncation."
       (dedicated . t)
       (window-parameters . ((no-other-window . t)))))))
 
+;; Tab Bar customization
+(use-package tab-bar
+  :custom
+  (tab-bar-show 1)
+  (tab-bar-format
+   (append tab-bar-format
+	   '(tab-bar-format-align-right tab-bar-format-global))))
+
 
 ;; Dired customization
 (use-package dired
@@ -412,7 +420,7 @@ and line truncation."
   :custom
   (display-time-interval 1)
   (display-time-default-load-average nil)
-  (display-time-format "%a %d %b %y %T"))
+  (display-time-format "%a %d %b  %T"))
 
 ;; Isolate themes not managed by `package' or `use-package' (e.g., user-created ones)
 (let ((theme-directory (expand-file-name "themes" user-emacs-directory)))

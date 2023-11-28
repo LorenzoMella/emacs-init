@@ -54,6 +54,16 @@
 (defvar *python-virtual-environment-home-path* "~/virtual_envs"
   "The directory where the Python Virtual Environments are located. Ignored if nil.")
 
+(defvar *tree-sitter-language-sources*
+  ;; entries are of the form (LANG . (URL REVISION SOURCE-DIR CC C++)), with the
+  ;; cdr (CC C++) optional
+  ;; TODO Add json
+  '((python "https://github.com/tree-sitter/tree-sitter-python.git" nil "src")
+    (bash "https://github.com/tree-sitter/tree-sitter-bash.git" nil "src")
+    (c "https://github.com/tree-sitter/tree-sitter-c.git" nil "src")
+    (cpp "https://github.com/tree-sitter/tree-sitter-cpp.git" nil "src"))
+  "Grammar retrieval information to populate `treesit-language-source-alist'.")
+
 (defvar *texlive-bin-path* "/usr/local/Cellar/texlive/58837_1/bin"
   "Path to the TeXlive binaries.")
 
@@ -674,6 +684,15 @@ and line truncation."
    (prog-mode . display-line-numbers-mode)
    (prog-mode . electric-pair-local-mode)))
 
+;; Tree-Sitter grammars configuration
+(use-package treesit
+  :after prog-mode
+  :config
+  (setq treesit-language-source-alist *tree-sitter-language-sources*)
+  (dolist (lang-spec treesit-language-source-alist)
+    (unless (treesit-language-available-p (car lang-spec))
+      (treesit-install-language-grammar (car lang-spec)))))
+
 ;; Auto Insert Mode: insert templates in new files
 (use-package autoinsert
   :config
@@ -758,6 +777,13 @@ and line truncation."
   ;; (csv-mode . display-line-numbers-mode)
   (csv-mode . hl-line-mode))
 
+;; Bash
+
+(use-package sh-script
+  :init
+  (unless (version< emacs-version "29")
+    (add-to-list 'major-mode-remap-alist (cons 'sh-mode #'bash-ts-mode))))
+
 ;; Eglot support for Microsoft's Language Server Protocol (LSP)
 
 (use-package eglot
@@ -766,11 +792,15 @@ and line truncation."
   (:map eglot-mode-map
     ("S-<f6>" . eglot-rename))
   :hook
-  ((python-mode c-mode c++-mode) . eglot-ensure)
+  ((python-mode python-ts-mode) . eglot-ensure)
+  ((c-mode c-ts-mode c++-mode c++-ts-mode) . eglot-ensure)
   :config
   (add-to-list 'eglot-server-programs `(c-mode ,*c/c++-lsp-server-binary*))
+  (add-to-list 'eglot-server-programs `(c-ts-mode ,*c/c++-lsp-server-binary*))
   (add-to-list 'eglot-server-programs `(c++-mode ,*c/c++-lsp-server-binary*))
+  (add-to-list 'eglot-server-programs `(c++-ts-mode ,*c/c++-lsp-server-binary*))
   (add-to-list 'eglot-server-programs `(python-mode ,*python-lsp-server-binary*))
+  (add-to-list 'eglot-server-programs `(python-ts-mode ,*python-lsp-server-binary*)))
 
 ;; SQL configuration
 (use-package sql
@@ -840,6 +870,9 @@ when called interactively."
     (forward-line)))
 
 (use-package python
+  :init
+  (unless (version< emacs-version "29")
+    (add-to-list 'major-mode-remap-alist (cons 'python-mode #'python-ts-mode)))
   :custom
   (python-indent-offset 4)
   (python-shell-completion-native-enable
@@ -850,7 +883,10 @@ when called interactively."
    ;; Remaps that mimic the behavior of ESS
    ("C-c C-b" . python-shell-send-buffer)
    ("C-c C-c" . python-shell-send-paragraph-or-region))
-  :init                                         ; these can be done with local varialbes
+  (:map python-ts-mode-map
+   ("C-c C-b" . python-shell-send-buffer)
+   ("C-c C-c" . python-shell-send-paragraph-or-region))
+  :init                                         ; these can be done with local variables
   (setenv "PYTHONPATH"
 	  (string-join
 	   (mapcar #'expand-file-name *additional-python-source-paths*)
@@ -877,7 +913,7 @@ when called interactively."
   ("C-c v w" . pyvenv-workon)
   ("C-c v r" . pyvenv-restart-python)
   :hook
-  ((python-mode inferior-python-mode) . pyvenv-mode)
+  ((python-mode python-ts-mode inferior-python-mode) . pyvenv-mode)
   :config
   (setq pyvenv-mode-line-indicator
 	'(pyvenv-virtual-env-name
@@ -911,13 +947,16 @@ when called interactively."
 ;; C/C++ configuration and ccls
 
 (use-package cc-mode
+  :init
+  (unless (version< emacs-version "29")
+    (add-to-list 'major-mode-remap-alist (cons 'c-or-c++-mode #'c-or-c++-ts-mode)))
   :hook
-  ((c-mode c++-mode) . c-toggle-hungry-state)
+  ((c-mode c-ts-mode c++-mode c++-ts-mode) . c-toggle-hungry-state)
   :bind
-  (:map c-mode-map
-   ("<f5>" . compile)
-   :map c++-mode-map
-   ("<f5>" . compile)))
+  (:map c-mode-map ("<f5>" . compile)
+   :map c++-mode-map ("<f5>" . compile)
+   :map c-ts-mode-map ("<f5>" . compile)
+   :map c++-ts-mode-map ("<f5>" . compile)))
 
 ;; Company backend for C/C++ headers
 (use-package company-c-headers

@@ -40,8 +40,8 @@
 (defvar *c/c++-lsp-server-binary* "/usr/local/bin/ccls"
   "Path to the chose C/C++ etc. LSP server executable.")
 
-(defvar *lisp-interpreter* "clisp"
-  "The name (or path) of the Common Lisp interpreter of choice)")
+(defvar *lisp-interpreter* "sbcl"
+  "Path to the Common Lisp interpreter of choice.")
 
 (defvar *additional-man-paths* '("/Applications/Emacs29.1.app/Contents/Resources/man"))
 

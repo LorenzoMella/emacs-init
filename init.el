@@ -1,14 +1,15 @@
-;;  init.el --- Personal init configuration for general use, C programming, Python and R -*- lexical-binding:t; coding:utf-8 -*-
-;;  Author: Lorenzo Mella <lorenzo.mella@hotmail.it>
+;;;  init.el --- Personal init configuration for general use, C programming, Python and R -*- lexical-binding: t; coding: utf-8 -*-
+
 ;;  Copyright (C) 2021-2022 Lorenzo Mella
 
+;;  Author: Lorenzo Mella <lorenzo.mella@hotmail.it>
 
-;; TODO:
-;;
+;; Commentary:
+
 ;; 1. org-agenda configuration
 ;; 2. LaTeX support (`AUCTeX', `pdf-tools', `ebib', etc.)
 ;; 3. EXWM support: automatically activated if no WM is found (of course, Linux only)
-;; 4. all-the-icons (may become obsolete, with full emoji font support)
+;; 4. nerd-icons
 
 
 ;;;

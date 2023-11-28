@@ -1,4 +1,4 @@
-;;  early-init.el  -*- lexical-binding:t; coding:utf-8 -*-
+;;;  early-init.el  -*- lexical-binding:t; coding:utf-8 -*-
 ;;  Author: Lorenzo Mella <lorenzo.mella@hotmail.it>
 ;;  Copyright (C) 2021-2022 Lorenzo Mella
 

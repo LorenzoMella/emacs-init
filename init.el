@@ -136,6 +136,12 @@ and line truncation."
 	(t    ; state here = (not truncate-lines)
 	 (toggle-truncate-lines 1))))
 
+(defun lm/string-from-file (path)
+  "Returns the content of a text file as a string."
+  (save-excursion
+    (with-temp-buffer
+      (insert-file-contents path)
+      (buffer-string))))
 
 ;;;
 ;;; Package management

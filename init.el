@@ -143,6 +143,15 @@ and line truncation."
       (insert-file-contents path)
       (buffer-string))))
 
+(defun lm/macos-move-file-to-trash (path)
+  "Replacement to `move-file-to-trash' using the native Move to Bin
+MacOS functionality. In particular, the Put Back menu option is
+available on items that have been moved to the Bin."
+  (call-process-shell-command
+   (format
+    "osascript -e 'tell application \"Finder\" to move POSIX file \"%s\" to trash'"
+    (string-remove-suffix "/" (expand-file-name path)))))
+
 ;;;
 ;;; Package management
 ;;;
@@ -299,9 +308,14 @@ and line truncation."
 (use-package files
   :custom
   (delete-by-moving-to-trash t)
-  (trash-directory (when (eq system-type 'darwin)
-		     (expand-file-name "~/.Trash"))
-   "MacOS trash must be set explicitly. The `Put Back' menu option does not work"))
+  :config
+  ;; Trash behavior on MacOS
+  (when (eq window-system 'ns)
+    (advice-add 'move-file-to-trash :override #'lm/macos-move-file-to-trash))
+  ;; Additional file types
+  (dolist (mode-spec *additional-auto-modes*)
+    (push mode-spec auto-mode-alist)))
+
 
 ;; Dired customization
 

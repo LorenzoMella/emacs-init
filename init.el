@@ -82,14 +82,12 @@ Set it to `nil' to append to this file.")
   "Any one of the browser symbols defined by the browse-url package.")
 
 (defvar *initial-scratch-message*
-  ";;                              __       __
-;;   __/|____________________ _/ /______/ /_  __/|_
-;;  |    / ___/ ___/ ___/ __ `/ __/ ___/ __ \\|    /
-;; /_ __(__  ) /__/ /  / /_/ / /_/ /__/ / / /_ __|
-;;  |/ /____/\\___/_/   \\__,_/\\__/\\___/_/ /_/ |/\n\n\n"
-  "Replacement of the trite *scratch* message with ASCII art.")
+  (expand-file-name "initial-scratch-message.txt" user-emacs-directory)
+  "Path to text file including a custom *scratch* buffer message.")
 
-(defvar *dashboard-logo* 'logo)
+(defvar *dashboard-logo*
+  (expand-file-name "dashboard-banner-kwalee-data-science1.txt" user-emacs-directory))
+
 
 ;;;
 ;;; General purpose custom functions
@@ -418,7 +416,7 @@ and line truncation."
 				`((alpha . ,*transparency-level*))))
 
 ;; Replace the default scratch message
-(customize-set-variable 'initial-scratch-message *initial-scratch-message*)
+(customize-set-variable 'initial-scratch-message (lm/string-from-file *initial-scratch-message*))
 
 ;; Convert non-visible ^L (form feed) into a horizontal line
 (use-package page-break-lines
@@ -563,6 +561,7 @@ and line truncation."
   (dashboard-center-content t)
   (dashboard-page-separator "\n\f\n")
   (dashboard-startup-banner *dashboard-logo*)
+  (dashboard-banner-logo-title (format "Welcome to Emacs (%s)!" emacs-version))
   (dashboard-items '((recents . 10) (bookmarks . 10) (agenda . 10)))
   (dashboard-set-footer nil)
   :config

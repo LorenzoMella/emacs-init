@@ -10,3 +10,9 @@
 ;; behavior is solved using `early-init.el' as done below.
 (when (eq system-type 'darwin)
   (add-hook 'window-setup-hook (lambda () (setq ns-use-native-fullscreen nil))))
+
+(tool-bar-mode -1)
+(unless (eq window-system 'ns)
+  (tool-bar-mode -1))
+(when (fboundp #'scroll-bar-mode)
+  (scroll-bar-mode -1))

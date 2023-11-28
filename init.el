@@ -181,10 +181,6 @@ and line truncation."
 ;;;
 
 
-;; Remove "legacy" GUI widgets
-(tool-bar-mode -1)
-(scroll-bar-mode -1)
-
 ;; Remap commands to more convenient keys (the defaults still work)
 (bind-key "M-o" #'other-window)
 (bind-key "C-M-;" #'comment-line)

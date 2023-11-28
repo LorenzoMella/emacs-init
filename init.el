@@ -29,21 +29,23 @@
   "Preferred shell to use with term/ansi-term.")
 
 (defvar *python-interpreter-binary* "python3"
-  "Preferred python or ipython interpreter.")
+  "Preferred Python interpreter.")
 
-(defvar *pylsp-binary* "~/.pyenv/shims/pylsp"
-    "Path to the pylsp executable.")
+(defvar *python-lsp-server-binary* "~/.pyenv/shims/pylsp"
+  "Path to the chosen Python LSP Server executable.")
 
 (defvar *gdb-binary* "/usr/bin/gdb"
-  "gdb executable to use with gdb and gud.")
+  "Path to gdb executable.")
 
-(defvar *ccls-binary* "/usr/bin/ccls"
-  "Path to the ccls executable.")
+(defvar *c/c++-lsp-server-binary* "/usr/local/bin/ccls"
+  "Path to the chose C/C++ etc. LSP server executable.")
 
 (defvar *lisp-interpreter* "clisp"
   "The name (or path) of the Common Lisp interpreter of choice)")
 
-(defvar *additional-texinfo-directories* '("/opt/local/share/info")
+(defvar *additional-man-paths* '("/Applications/Emacs29.1.app/Contents/Resources/man"))
+
+(defvar *additional-texinfo-paths* '("/opt/local/share/info")
   "List of the nonstandard texinfo paths.")
 
 (defvar *additional-python-source-paths* '("~/code/common_packages")
@@ -55,7 +57,7 @@
 (defvar *texlive-bin-path* "/usr/local/Cellar/texlive/58837_1/bin"
   "Path to the TeXlive binaries.")
 
-(defvar *additional-bin-paths* '("~/.local/bin" "~/.pyenv/shims")
+(defvar *additional-bin-paths* '("~/.local/bin" "~/.pyenv/shims" "/usr/local/bin")
   "List of paths to additional binaries.")
 
 (defvar *preferred-sql-product* 'postgres
@@ -378,7 +380,7 @@ and line truncation."
   (Info-mode . visual-line-mode)
   :custom
   (Info-additional-directory-list
-   (append Info-additional-directory-list *additional-texinfo-directories*)))
+   (append Info-additional-directory-list *additional-texinfo-paths*)))
 
 ;; Doc View configuration
 (use-package doc-view
@@ -496,13 +498,23 @@ and line truncation."
 ;;;
 
 
-;; Add additional paths to both the environment variable PATH and the
-;; Emacs exec-path list
+;; Add additional paths the exec-path list and update the process PATH variable
 (add-to-list 'exec-path (expand-file-name *texlive-bin-path*))
 (dolist (path *additional-bin-paths*)
   (add-to-list 'exec-path (expand-file-name path)))
 
-(setenv "PATH" (cl-reduce (lambda (path rest) (concat path ":" rest)) exec-path))
+(setenv "PATH" 	(string-join
+		 (list (string-join exec-path path-separator)
+		       (getenv "PATH"))
+		 path-separator))
+
+;; Also update man paths
+(setenv "MANPATH"
+	(string-join
+	 (list (string-join *additional-man-paths* path-separator)
+	       (getenv "MANPATH"))
+	 path-separator))
+
 
 ;; Automate the interactive shell query of ansi-term
 (advice-add 'ansi-term :filter-args #'(lambda (shell-name)
@@ -757,8 +769,9 @@ and line truncation."
   :hook
   ((python-mode c-mode c++-mode) . eglot-ensure)
   :config
-  (add-to-list 'eglot-server-programs `(c-mode ,*ccls-binary*))
-  (add-to-list 'eglot-server-programs `(python-mode ,*pylsp-binary*)))
+  (add-to-list 'eglot-server-programs `(c-mode ,*c/c++-lsp-server-binary*))
+  (add-to-list 'eglot-server-programs `(c++-mode ,*c/c++-lsp-server-binary*))
+  (add-to-list 'eglot-server-programs `(python-mode ,*python-lsp-server-binary*))
 
 ;; SQL configuration
 (use-package sql
@@ -918,7 +931,7 @@ when called interactively."
 (use-package ccls
   :ensure t
   :custom
-  (ccls-executable *ccls-binary*))
+  (ccls-executable *c/c++-lsp-server-binary*))
 
 ;; Debugger interface
 (use-package gdb-mi
@@ -930,8 +943,15 @@ when called interactively."
 (use-package slime
   :ensure t
   :commands slime
+  :bind (:map lisp-mode-map
+	      ("C-c s" . slime))
   :init
   (customize-set-variable 'inferior-lisp-program *lisp-interpreter*))
+
+(use-package slime-company
+  :ensure t
+  :config
+  (add-to-list 'company-backends #'company-slime))
 
 ;; Guile Scheme support
 

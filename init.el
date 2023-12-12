@@ -330,6 +330,10 @@ available on items that have been moved to the Bin."
 
 ;; Tab Bar customization
 (use-package tab-bar
+  :bind
+  ;; TODO Implement repeat
+  ("C-x t <right>" . tab-bar-move-tab)
+  ("C-x t <left>" . tab-bar-move-tab-backward)
   :custom
   (tab-bar-show 1)
   (tab-bar-format
@@ -695,7 +699,8 @@ available on items that have been moved to the Bin."
   ;; The following show previews of the buffer while browsing the list
   ;; (compared to ivy-switch-buffer and ivy-switch-buffer-other-window)
   ("C-x C-b" . counsel-switch-buffer)
-  ("C-x 4 b" . counsel-switch-buffer-other-window))
+  ("C-x 4 b" . counsel-switch-buffer-other-window)
+  ("s-8 RET" . counsel-unicode-char))
 
 ;; Prescient: frequency-based result rankings
 (use-package prescient
@@ -790,6 +795,9 @@ available on items that have been moved to the Bin."
   :commands (list realgud:pdb realgud:gdb)
   :bind
   (:map python-mode-map
+	("C-x C-a C-r" . realgud:pdb)
+	("C-x C-a C-a" . realgud:attach-cmd-buffer)
+   :map python-ts-mode-map
 	("C-x C-a C-r" . realgud:pdb)
 	("C-x C-a C-a" . realgud:attach-cmd-buffer)
    :map c-mode-map ("C-x C-a C-r" . realgud:gdb)

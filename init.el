@@ -91,6 +91,9 @@ Set it to `nil' to append to this file.")
 (defvar *preferred-browser* #'browse-url-default-browser
   "Any one of the browser symbols defined by the browse-url package.")
 
+(defvar *latex-preview-scaling-in-org* 2.0
+  "Scaling of Latex image previews in Org Mode.")
+
 (defvar *initial-scratch-message*
   (expand-file-name "initial-scratch-message.txt" user-emacs-directory)
   "Path to text file including a custom *scratch* buffer message.")
@@ -375,8 +378,7 @@ available on items that have been moved to the Bin."
   (dolist (elem '(("b" . "src bash") ("conf" . "src conf")
 		  ("el" . "src emacs-lisp") ("py" . "src python")))
     (add-to-list 'org-structure-template-alist elem))
-  ;; Better initial scaling of latex preview rendering in org documents
-  (plist-put org-format-latex-options :scale 2.0)
+  (plist-put org-format-latex-options :scale *latex-preview-scaling-in-org*)
   (dolist (x '(python jupyter))
     (add-to-list 'org-babel-load-languages `(,x . t))))
 

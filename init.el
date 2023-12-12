@@ -85,8 +85,8 @@
   "`Customize' will save its settings in this file.
 Set it to `nil' to append to this file.")
 
-(defvar *transparency-level* 0.97
-  "Global frame transparency parameter (involving both background and text).")
+(defvar *transparency-level* '(90 90)
+  "Frame transparency parameter.")
 
 (defvar *preferred-browser* #'browse-url-default-browser
   "Any one of the browser symbols defined by the browse-url package.")
@@ -138,6 +138,11 @@ and line truncation."
 	 (message "Visual Line Mode enabled"))
 	(t    ; state here = (not truncate-lines)
 	 (toggle-truncate-lines 1))))
+
+(cl-defun adjust-transparency (alpha &key (frame (window-frame)) (background nil))
+  "Quick interactive transparency adjustment."
+  (interactive "NEnter transparency level: ")
+  (set-frame-parameter frame (if background 'alpha-background 'alpha) alpha))
 
 (defun lm/string-from-file (path)
   "Returns the content of a text file as a string."
@@ -443,9 +448,9 @@ available on items that have been moved to the Bin."
 (customize-set-variable 'frame-resize-pixelwise t)
 
 ;; Optionally transparent frame
-(customize-set-variable 'default-frame-alist
-			(append default-frame-alist
-				`((alpha . ,*transparency-level*))))
+(customize-set-variable
+ 'default-frame-alist
+ (add-to-list 'default-frame-alist (cons 'alpha *transparency-level*)))
 
 ;; Replace the default scratch message
 (customize-set-variable 'initial-scratch-message (lm/string-from-file *initial-scratch-message*))

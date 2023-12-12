@@ -70,8 +70,25 @@
 (defvar *additional-bin-paths* '("~/.local/bin" "~/.pyenv/shims" "/usr/local/bin")
   "List of paths to additional binaries.")
 
-(defvar *preferred-sql-product* 'postgres
-  "The most likely SQL dialect in use (a symbol).")
+(defvar *additional-auto-modes* (list (cons "\\.pgpass\\'" #'conf-mode)))
+
+(defvar *sql-product* 'postgres
+  "The default SQL dialect in sql-mode buffers.")
+
+(defvar *sql-connection-alist*
+  '(("redshift"
+     (sql-product 'postgres)
+     (sql-user "lorenzomella")
+     (sql-server "redshift-cluster-1.cergm5wcwtrj.us-west-2.redshift.amazonaws.com")
+     (sql-database "public")
+     (sql-port 5439))
+    ("rds-postgres"
+     (sql-product 'postgres)
+     (sql-user "lorenzomella")
+     (sql-server "db01.analytics.kwalee.com")
+     (sql-database "postgres")
+     (sql-port 5432)))
+  "Database user/role configuration.")
 
 (defvar *ein-image-viewer* "/bin/feh --image-bg white"
   "Image viewing program used by the ein package (with arguments).")
@@ -837,9 +854,18 @@ available on items that have been moved to the Bin."
   (add-to-list 'eglot-server-programs `(python-ts-mode ,*python-lsp-server-binary*)))
 
 ;; SQL configuration
+(use-package sql-indent
+  :ensure t)
+
 (use-package sql
   :custom
-  (sql-product *preferred-sql-product*))
+  (sql-product *sql-product*)
+  (sql-connection-alist *sql-connection-alist*)
+  :hook
+  (sql-mode . sqlind-minor-mode)
+  :bind
+  ("C-c C-p" . sql-connect)
+  ("C-<return>" . sql-send-paragraph))
 
 ;; ESS - Emacs Speaks Statistics: R and R Markdown suite
 

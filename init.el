@@ -293,6 +293,13 @@ available on items that have been moved to the Bin."
     (bind-key "<s-mouse-4>" #'mwheel-scroll)
     (bind-key "<s-mouse-5>" #'mwheel-scroll)))
 
+(use-package pixel-scroll
+  :init
+  ;; TODO Ideally it should only activate with Magic Mouse or similar
+  ;; smooth-scrolling devices
+  (when (eq (window-system) 'ns)
+    (pixel-scroll-precision-mode)))
+
 ;; Display Buffer customization
 (use-package window
   :custom

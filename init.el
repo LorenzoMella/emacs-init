@@ -131,9 +131,9 @@ Set it to `nil' to append to this file.")
 
 (defalias 'init-show 'lm/init-show)
 
-(defun lm/frame-resize-and-center (width-fraction)
+(defun lm/frame-resize-and-center (&optional width-fraction)
   "Resizes the frame to about two thirds of the screen."
-  (interactive (list 0.618)) ; Using the inverted golden ratio in place of 2/3
+  (interactive '(0.618))  ; Using the inverted golden ratio in place of 2/3
   (let* ((workarea (frame-monitor-attribute 'workarea))
 	 (new-width (floor (* (caddr workarea) width-fraction)))
 	 (new-height (cadddr workarea))
@@ -176,6 +176,7 @@ available on items that have been moved to the Bin."
    (format
     "osascript -e 'tell application \"Finder\" to move POSIX file \"%s\" to trash'"
     (string-remove-suffix "/" (expand-file-name path)))))
+
 
 ;;;
 ;;; Package management
@@ -291,11 +292,6 @@ available on items that have been moved to the Bin."
 
 ;; Mouse configuration
 
-(use-package xt-mouse
-  :init
-  (when (not (window-system))
-    (xterm-mouse-mode)))
-
 (use-package mwheel
   :custom
   (mouse-wheel-tilt-scroll t
@@ -317,6 +313,11 @@ available on items that have been moved to the Bin."
   (when (eq (window-system) 'ns)
     (pixel-scroll-precision-mode)))
 
+(use-package xt-mouse
+  :init
+  (unless (window-system)
+    (xterm-mouse-mode)))
+
 ;; Display Buffer customization
 (use-package window
   :custom
@@ -337,8 +338,8 @@ available on items that have been moved to the Bin."
   :custom
   (tab-bar-show 1)
   (tab-bar-format
-   (append tab-bar-format
-	   '(tab-bar-format-align-right tab-bar-format-global))))
+   (append tab-bar-format '(tab-bar-format-align-right tab-bar-format-global))))
+
 
 ;; Files customization
 (use-package files
@@ -413,7 +414,7 @@ available on items that have been moved to the Bin."
     (add-to-list 'org-structure-template-alist elem))
   (plist-put org-format-latex-options :scale *latex-preview-scaling-in-org*)
   (dolist (x '(python jupyter))
-    (add-to-list 'org-babel-load-languages `(,x . t))))
+    (add-to-list 'org-babel-load-languages (cons x t))))
 
 (use-package org-tempo
   :after org
@@ -749,6 +750,13 @@ available on items that have been moved to the Bin."
     (unless (treesit-language-available-p (car lang-spec))
       (treesit-install-language-grammar (car lang-spec)))))
 
+;; Magit: highly comfy git interface
+(use-package magit
+  :ensure t
+  :commands magit-status
+  :bind
+  ("C-x g" . magit-status))
+
 ;; Auto Insert Mode: insert templates in new files
 (use-package autoinsert
   :config
@@ -782,17 +790,9 @@ available on items that have been moved to the Bin."
       "main()" \n))
   (auto-insert-mode t))
 
-;; Magit: highly comfy git interface
-(use-package magit
-  :ensure t
-  :commands magit-status
-  :bind
-  ("C-x g" . magit-status))
-
 ;; RealGUD: better debugger interface
 (use-package realgud
   :ensure t
-  :commands (list realgud:pdb realgud:gdb)
   :bind
   (:map python-mode-map
 	("C-x C-a C-r" . realgud:pdb)
@@ -926,10 +926,11 @@ when called interactively."
   (interactive (list current-prefix-arg t))
   (if (region-active-p)
       (python-shell-send-region (region-beginning) (region-end) send-main msg)
-    (save-excursion (python-shell-send-region
-		     (progn (backward-paragraph) (point))
-		     (progn (forward-paragraph) (point))
-		     send-main msg)))
+    (save-excursion
+      (python-shell-send-region
+       (progn (backward-paragraph) (point))
+       (progn (forward-paragraph) (point))
+       send-main msg)))
   (forward-paragraph)
   (if (= (point) (point-max))
       (end-of-line)
@@ -947,8 +948,8 @@ when called interactively."
    (if (not (equal system-type 'darwin)) t)
    "Native shell completion doesn't work on MacOS")
   :bind
+  ;; Remaps that mimic the behavior of ESS
   (:map python-mode-map
-   ;; Remaps that mimic the behavior of ESS
    ("C-c C-b" . python-shell-send-buffer)
    ("C-c C-c" . python-shell-send-paragraph-or-region))
   (:map python-ts-mode-map
@@ -962,11 +963,6 @@ when called interactively."
   (when *python-virtual-environment-home-path* ; FIXME  why use `when'?
     ;; The easiest way to let pyvenv etc. know where to create virtual environments
     (setenv "WORKON_HOME" (expand-file-name *python-virtual-environment-home-path*))))
-
-;; ipython-shell-send: send snippets to inferior IPython shells (I
-;; haven't tested it well)
-;; (use-package ipython-shell-send
-;; :ensure t)
 
 ;; Activate and make the inferior shell aware of virtual environments
 ;; FIX: I don't remember the meaning of hook and shell specifications

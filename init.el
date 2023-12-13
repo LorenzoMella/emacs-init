@@ -40,8 +40,11 @@
 (defvar *c/c++-lsp-server-binary* "/usr/local/bin/ccls"
   "Path to the chose C/C++ etc. LSP server executable.")
 
-(defvar *lisp-interpreter* "sbcl"
+(defvar *lisp-binary* "sbcl"
   "Path to the Common Lisp interpreter of choice.")
+
+(defvar *scheme-binary* "guile"
+  "Path to the Scheme interpreter of choice.")
 
 (defvar *additional-man-paths* '("/Applications/Emacs29.1.app/Contents/Resources/man"))
 
@@ -1045,10 +1048,9 @@ when called interactively."
 (use-package slime
   :ensure t
   :commands slime
-  :bind (:map lisp-mode-map
-	      ("C-c s" . slime))
+  :bind (:map lisp-mode-map ("C-c s" . slime))
   :init
-  (customize-set-variable 'inferior-lisp-program *lisp-interpreter*))
+  (customize-set-variable 'inferior-lisp-program *lisp-binary*))
 
 (use-package slime-company
   :ensure t
@@ -1056,6 +1058,10 @@ when called interactively."
   (add-to-list 'company-backends #'company-slime))
 
 ;; Guile Scheme support
+
+(use-package scheme
+  :custom
+  (scheme-program-name *scheme-binary*))
 
 (use-package geiser
   :ensure t)
@@ -1067,13 +1073,13 @@ when called interactively."
   (geiser-guile-manual-lookup-other-window-p t
    "Open info entries in another window")
   :bind
-  (:map scheme-mode-map ("C-c C-p" . run-geiser))) ; in analogy to Python Mode
+  (:map scheme-mode-map ("C-c s" . run-geiser)))
 
 ;; Meme "Wizard Book" in Info format. Read it with `M-x info'.
 ;; Also worth checking out:
 ;; - a homebrew LaTeX version at:
 ;;   https://github.com/sarabander/sicp-pdf.git
-;; - and the original free html format at:
+;; - the original free HTML version at:
 ;;   https://mitpress.mit.edu/sites/default/files/sicp/index.html
 (use-package sicp
   :ensure t)

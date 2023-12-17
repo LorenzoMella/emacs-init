@@ -140,6 +140,12 @@ and line truncation."
 	 (toggle-truncate-lines 1))))
 
 
+(defun lm/string-from-file-content (path)
+  (with-temp-buffer
+    (insert-file-contents-literally path)
+    (buffer-string)))
+
+
 ;;;
 ;;; Package management
 ;;;
@@ -157,7 +163,8 @@ and line truncation."
 (package-initialize)
 
 ;; Package management will be handled by use-package
-(unless (package-installed-p 'use-package)
+(unless (or (not (version< emacs-version "29"))
+	    (package-installed-p 'use-package))
   (package-refresh-contents)
   (package-install 'use-package))
 
@@ -421,9 +428,14 @@ and line truncation."
 (customize-set-variable 'frame-resize-pixelwise t)
 
 ;; Optionally transparent frame
-(customize-set-variable 'default-frame-alist
-			(cons default-frame-alist
-			      `((alpha . ,*transparency-level*))))
+(let ((alpha-symbol (if (and (not (version< emacs-version "29"))
+			     (eq (window-system) 'x))
+			'alpha-background
+		      'alpha)))
+  (customize-set-variable 'default-frame-alist
+			  (cons
+			   `(,alpha-symbol . ,*transparency-level*)
+			   default-frame-alist)))
 
 ;; Replace the default scratch message
 (customize-set-variable 'initial-scratch-message *initial-scratch-message*)
@@ -431,7 +443,6 @@ and line truncation."
 ;; Convert non-visible ^L (form feed) into a horizontal line
 (use-package page-break-lines
   :ensure t
-
   :init
   (global-page-break-lines-mode))
 
@@ -570,6 +581,7 @@ and line truncation."
   (dashboard-center-content t)
   (dashboard-page-separator "\n\f\n")
   (dashboard-startup-banner 'logo)
+  (dashboard-banner-logo-title (format "GNU Emacs %s" emacs-version))
   (dashboard-items '((recents . 10) (bookmarks . 10) (agenda . 10)))
   (dashboard-set-footer nil)
   :config
@@ -677,8 +689,7 @@ and line truncation."
 ;; Convenient minor modes for programming
 (use-package prog-mode
   :hook
-  ((prog.mode . indent-tabs-mode)
-   (prog-mode . subword-mode)
+  ((prog-mode . subword-mode)
    (prog-mode . show-paren-mode)
    (prog-mode . display-line-numbers-mode)
    (prog-mode . electric-pair-local-mode)))
@@ -755,8 +766,8 @@ and line truncation."
   (company-idle-delay 0)
   (company-minimum-prefix-length 2)
   :hook
-  ((prog-mode . company-mode)
-   (prog-mode . yas-minor-mode)))
+  (prog-mode . company-mode)
+  (prog-mode . yas-minor-mode))
 
 ;; Eldoc configuration
 (use-package eldoc

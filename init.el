@@ -211,12 +211,8 @@ and line truncation."
 (bind-key "s--" #'text-scale-decrease)
 
 ;; Remap the insert-char shortcuts
-(cond ((eq system-type 'gnu/linux)    ; Avoid Gnome incompatibilities 
-       (bind-key "<s-return>" 'iso-transl-ctl-x-8-map key-translation-map)
-       (bind-key "<s-return> RET" #'insert-char))
-      (t 
-       (bind-key "s-8" 'iso-transl-ctl-x-8-map key-translation-map)
-       (bind-key "s-8 RET" #'insert-char)))
+(bind-key "s-8" 'iso-transl-ctl-x-8-map key-translation-map)
+(bind-key "s-8 RET" #'counsel-unicode-char)
   
 ;; Window-resizing keybindings
 (unbind-key "s-m") ; Normally bound to `iconify-frame' on MacOS. Use `C-z' instead
@@ -235,6 +231,8 @@ and line truncation."
 
 ;; Other keybindings
 (bind-key "s-m `" #'lm/cycle-line-wrap-modes)
+(bind-key "C-c w w" #'whitespace-mode)
+(bind-key "C-c w c" #'whitespace-cleanup)
 
 ;; Always visualize column numbers
 (column-number-mode)

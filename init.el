@@ -43,6 +43,13 @@
 
 (defvar *lisp-interpreter* "sbcl"
   "The name (or path) of the Common Lisp interpreter of choice)")
+(defvar *tree-sitter-grammars-urls*
+  '((python "https://github.com/tree-sitter/tree-sitter-python.git" "master" "src")
+    (bash "https://github.com/tree-sitter/tree-sitter-bash.git" "master" "src")
+    (c "https://github.com/tree-sitter/tree-sitter-c.git" "master" "src")
+    (cpp "https://github.com/tree-sitter/tree-sitter-cpp.git" "master" "src")
+    (css "https://github.com/tree-sitter/tree-sitter-css.git" "master" "src")
+    (gdscript "https://github.com/PrestonKnopp/tree-sitter-gdscript.git" "master" "src")))
 
 (defvar *additional-texinfo-directories* '("/opt/local/share/info")
   "List of the nonstandard texinfo paths.")
@@ -674,6 +681,23 @@ and line truncation."
    (prog-mode . display-line-numbers-mode)
    (prog-mode . electric-pair-local-mode)))
 
+(use-package treesit
+  :after prog-mode
+  :custom
+  (major-mode-remap-alist (append '((c-or-c++-mode . c-or-c++-ts-mode)
+				    (css-mode . css-ts-mode)
+				    (python-mode . python-ts-mode)
+				    (sh-mode . bash-ts-mode)
+				    (gdscript-mode . gdscript-ts-mode))))
+
+  :config
+  ;; Automatic installation of newly configured packages after restart
+  (setq treesit-language-source-alist *tree-sitter-grammars-urls*)
+  (dolist (lang-spec treesit-language-source-alist)
+    (let ((lang (car lang-spec)))
+      (unless (treesit-language-available-p lang)
+	(treesit-install-language-grammar lang)))))
+
 ;; Auto Insert Mode: insert templates in new files
 (use-package autoinsert
   :config
@@ -751,13 +775,15 @@ and line truncation."
 (use-package eglot
   :ensure t
   :hook
-  ((python-mode c-mode c++-mode) . eglot-ensure)
+  ((python-mode python-ts-mode c-mode c++-mode gdscript-mode) . eglot-ensure)
   :bind
   (:map eglot-mode-map
 	("S-<f6>" . eglot-rename))
   :config
   (add-to-list 'eglot-server-programs `(c-mode ,*ccls-binary*))
-  (add-to-list 'eglot-server-programs `(python-mode ,*pylsp-binary*)))
+  (add-to-list 'eglot-server-programs `(python-mode ,*pylsp-binary*))
+  (add-to-list 'eglot-server-programs `(python-ts-mode ,*pylsp-binary*)))
+
 
 ;; SQL configuration
 (use-package sql
@@ -836,6 +862,10 @@ when called interactively."
    "Native shell completion doesn't work on MacOS")
   :bind
   (:map python-mode-map
+   ;; Remaps that mimic the behavior of ESS
+   ("C-c C-b" . python-shell-send-buffer)
+   ("C-c C-c" . python-shell-send-paragraph-or-region))
+  (:map python-ts-mode-map
    ;; Remaps that mimic the behavior of ESS
    ("C-c C-b" . python-shell-send-buffer)
    ("C-c C-c" . python-shell-send-paragraph-or-region))

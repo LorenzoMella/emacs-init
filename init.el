@@ -41,8 +41,12 @@
 (defvar *ccls-binary* "/usr/bin/ccls"
   "Path to the ccls executable.")
 
-(defvar *lisp-interpreter* "sbcl"
-  "The name (or path) of the Common Lisp interpreter of choice)")
+(defvar *lisp-binary* "sbcl"
+  "The path to the Common Lisp interpreter of choice.")
+
+(defvar *scheme-binary* "guile"
+  "The path to the Scheme interpreter of choice.")
+
 (defvar *tree-sitter-grammars-urls*
   '((python "https://github.com/tree-sitter/tree-sitter-python.git" "master" "src")
     (bash "https://github.com/tree-sitter/tree-sitter-bash.git" "master" "src")
@@ -987,7 +991,7 @@ when called interactively."
 (use-package slime
   :ensure t
   :init
-  (customize-set-variable 'inferior-lisp-program *lisp-interpreter*)
+  (customize-set-variable 'inferior-lisp-program *lisp-binary*)
   :hook
   ;; Browsing the Web 1.0 CLHS is comfier from within Emacs
   (lisp-mode . (lambda ()
@@ -997,10 +1001,13 @@ when called interactively."
 			       (eww-browse-url a t)))))
   :bind
   (:map lisp-mode-map
-    ;; open the SLIME REPL instead of the native Lisp one
-    ("C-c C-z" . slime)))
+	("C-c s" . slime)))
 
 ;; Guile-Scheme support
+
+(use-package scheme
+  :custom
+  (scheme-program-name *scheme-binary*))
 
 (use-package geiser
   :ensure t)

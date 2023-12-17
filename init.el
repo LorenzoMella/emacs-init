@@ -761,6 +761,22 @@ and line truncation."
   :custom
   (eldoc-echo-area-prefer-doc-buffer t))
 
+(use-package realgud
+  :ensure t
+  :bind
+  (:map
+   python-mode-map
+   ("C-x C-a C-r" . realgud:pdb)
+   ("C-x C-a C-a" . realgud:attach-cmd-buffer)
+   :map
+   c-mode-map
+   ("C-x C-a C-r" . realgud:gdb)
+   ("C-x C-a C-a" . realgud:attach-cmd-buffer)
+   :map
+   c++-mode-map
+   ("C-x C-a C-r" . realgud:gdb)
+   ("C-x C-a C-a" . realgud:attach-cmd-buffer)))
+
 ;; CSV Mode - Support for column-wise CSV-file visualization
 (use-package csv-mode
   :ensure t

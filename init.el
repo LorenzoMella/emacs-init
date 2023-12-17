@@ -186,11 +186,6 @@ and line truncation."
 ;;;
 
 
-;; Remove useless GUI widgets
-(menu-bar-mode -1)
-(tool-bar-mode -1)
-(scroll-bar-mode -1)
-
 ;; Tab Bar Mode
 (use-package time
   :custom

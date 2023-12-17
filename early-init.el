@@ -10,3 +10,8 @@
 ;; behavior is solved using `early-init.el' as done below.
 (when (eq system-type 'darwin)
   (add-hook 'window-setup-hook (lambda () (setq ns-use-native-fullscreen nil))))
+
+;; Remove useless GUI widgets
+(menu-bar-mode -1)
+(tool-bar-mode -1)
+(scroll-bar-mode -1)

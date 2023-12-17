@@ -278,7 +278,8 @@ and line truncation."
   (trash-directory (when (eq system-type 'ns)
 		     (expand-file-name "~/.Trash")))
   :config
-  (push '("\\.sbclrc" . lisp-mode) auto-mode-alist))
+  (push '("\\.sbclrc" . lisp-mode) auto-mode-alist)
+  (push '("\\.godot" . conf-windows-mode) auto-mode-alist))
 
 ;; Dired customization
 (use-package dired
@@ -967,6 +968,16 @@ when called interactively."
 ;;   https://mitpress.mit.edu/sites/default/files/sicp/index.html
 (use-package sicp
   :ensure t)
+
+
+;; GDScript support
+
+(use-package gdscript-mode
+  :ensure t
+  :custom
+  (gdscript-use-tab-indents t)
+  :hook
+  (gdscript-mode . (lambda () (company-mode -1))))
 
 
 ;;;

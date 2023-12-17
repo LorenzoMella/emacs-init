@@ -800,6 +800,12 @@ and line truncation."
   (add-to-list 'eglot-server-programs `(python-mode ,*pylsp-binary*))
   (add-to-list 'eglot-server-programs `(python-ts-mode ,*pylsp-binary*)))
 
+;; Web dev configuration
+;; NOTE `skewer-mode' could be useful for live updates in the browser
+(use-package mhtml-mode
+  :config
+  (unbind-key "M-o" html-mode-map)
+  (unbind-key "M-o" mhtml-mode-map))
 
 ;; SQL configuration
 (use-package sql

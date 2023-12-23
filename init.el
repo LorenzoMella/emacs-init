@@ -41,8 +41,19 @@
 (defvar *ccls-binary* "/usr/bin/ccls"
   "Path to the ccls executable.")
 
-(defvar *lisp-interpreter* "sbcl"
-  "The name (or path) of the Common Lisp interpreter of choice)")
+(defvar *lisp-binary* "sbcl"
+  "The path to the Common Lisp interpreter of choice.")
+
+(defvar *scheme-binary* "guile"
+  "The path to the Scheme interpreter of choice.")
+
+(defvar *tree-sitter-grammars-urls*
+  '((python "https://github.com/tree-sitter/tree-sitter-python.git" "master" "src")
+    (bash "https://github.com/tree-sitter/tree-sitter-bash.git" "master" "src")
+    (c "https://github.com/tree-sitter/tree-sitter-c.git" "master" "src")
+    (cpp "https://github.com/tree-sitter/tree-sitter-cpp.git" "master" "src")
+    (css "https://github.com/tree-sitter/tree-sitter-css.git" "master" "src")
+    (gdscript "https://github.com/PrestonKnopp/tree-sitter-gdscript.git" "master" "src")))
 
 (defvar *additional-texinfo-directories* '("/opt/local/share/info")
   "List of the nonstandard texinfo paths.")
@@ -127,6 +138,12 @@ and line truncation."
 	 (toggle-truncate-lines 1))))
 
 
+(defun lm/string-from-file-content (path)
+  (with-temp-buffer
+    (insert-file-contents-literally path)
+    (buffer-string)))
+
+
 ;;;
 ;;; Package management
 ;;;
@@ -143,7 +160,8 @@ and line truncation."
 (package-initialize)
 
 ;; Package management will be handled by use-package
-(unless (package-installed-p 'use-package)
+(unless (or (not (version< emacs-version "29"))
+	    (package-installed-p 'use-package))
   (package-refresh-contents)
   (package-install 'use-package))
 
@@ -183,11 +201,6 @@ and line truncation."
 ;;;
 
 
-;; Remove useless GUI widgets
-(menu-bar-mode -1)
-(tool-bar-mode -1)
-(scroll-bar-mode -1)
-
 ;; Tab Bar Mode
 (use-package time
   :custom
@@ -202,12 +215,8 @@ and line truncation."
 (bind-key "s--" #'text-scale-decrease)
 
 ;; Remap the insert-char shortcuts
-(cond ((eq system-type 'gnu/linux)    ; Avoid Gnome incompatibilities 
-       (bind-key "<s-return>" 'iso-transl-ctl-x-8-map key-translation-map)
-       (bind-key "<s-return> RET" #'insert-char))
-      (t 
-       (bind-key "s-8" 'iso-transl-ctl-x-8-map key-translation-map)
-       (bind-key "s-8 RET" #'insert-char)))
+(bind-key "s-8" 'iso-transl-ctl-x-8-map key-translation-map)
+(bind-key "s-8 RET" #'counsel-unicode-char)
   
 ;; Window-resizing keybindings
 (unbind-key "s-m") ; Normally bound to `iconify-frame' on MacOS. Use `C-z' instead
@@ -226,6 +235,8 @@ and line truncation."
 
 ;; Other keybindings
 (bind-key "s-m `" #'lm/cycle-line-wrap-modes)
+(bind-key "C-c w w" #'whitespace-mode)
+(bind-key "C-c w c" #'whitespace-cleanup)
 
 ;; Always visualize column numbers
 (column-number-mode)
@@ -280,7 +291,8 @@ and line truncation."
   (trash-directory (when (eq system-type 'ns)
 		     (expand-file-name "~/.Trash")))
   :config
-  (push '("\\.sbclrc" . lisp-mode) auto-mode-alist))
+  (push '("\\.sbclrc" . lisp-mode) auto-mode-alist)
+  (push '("\\.godot" . conf-windows-mode) auto-mode-alist))
 
 ;; Dired customization
 (use-package dired
@@ -413,9 +425,14 @@ and line truncation."
 (customize-set-variable 'frame-resize-pixelwise t)
 
 ;; Optionally transparent frame
-(customize-set-variable 'default-frame-alist
-			(cons default-frame-alist
-			      `((alpha . ,*transparency-level*))))
+(let ((alpha-symbol (if (and (not (version< emacs-version "29"))
+			     (eq (window-system) 'x))
+			'alpha-background
+		      'alpha)))
+  (customize-set-variable 'default-frame-alist
+			  (cons
+			   `(,alpha-symbol . ,*transparency-level*)
+			   default-frame-alist)))
 
 ;; Replace the default scratch message
 (customize-set-variable 'initial-scratch-message *initial-scratch-message*)
@@ -423,7 +440,6 @@ and line truncation."
 ;; Convert non-visible ^L (form feed) into a horizontal line
 (use-package page-break-lines
   :ensure t
-
   :init
   (global-page-break-lines-mode))
 
@@ -562,6 +578,7 @@ and line truncation."
   (dashboard-center-content t)
   (dashboard-page-separator "\n\f\n")
   (dashboard-startup-banner 'logo)
+  (dashboard-banner-logo-title (format "GNU Emacs %s" emacs-version))
   (dashboard-items '((recents . 10) (bookmarks . 10) (agenda . 10)))
   (dashboard-set-footer nil)
   :config
@@ -669,11 +686,27 @@ and line truncation."
 ;; Convenient minor modes for programming
 (use-package prog-mode
   :hook
-  ((prog.mode . indent-tabs-mode)
-   (prog-mode . subword-mode)
+  ((prog-mode . subword-mode)
    (prog-mode . show-paren-mode)
    (prog-mode . display-line-numbers-mode)
    (prog-mode . electric-pair-local-mode)))
+
+(use-package treesit
+  :after prog-mode
+  :custom
+  (major-mode-remap-alist (append '((c-or-c++-mode . c-or-c++-ts-mode)
+				    (css-mode . css-ts-mode)
+				    (python-mode . python-ts-mode)
+				    (sh-mode . bash-ts-mode)
+				    (gdscript-mode . gdscript-ts-mode))))
+
+  :config
+  ;; Automatic installation of newly configured packages after restart
+  (setq treesit-language-source-alist *tree-sitter-grammars-urls*)
+  (dolist (lang-spec treesit-language-source-alist)
+    (let ((lang (car lang-spec)))
+      (unless (treesit-language-available-p lang)
+	(treesit-install-language-grammar lang)))))
 
 ;; Auto Insert Mode: insert templates in new files
 (use-package autoinsert
@@ -730,13 +763,29 @@ and line truncation."
   (company-idle-delay 0)
   (company-minimum-prefix-length 2)
   :hook
-  ((prog-mode . company-mode)
-   (prog-mode . yas-minor-mode)))
+  (prog-mode . company-mode)
+  (prog-mode . yas-minor-mode))
 
 ;; Eldoc configuration
 (use-package eldoc
   :custom
   (eldoc-echo-area-prefer-doc-buffer t))
+
+(use-package realgud
+  :ensure t
+  :bind
+  (:map
+   python-mode-map
+   ("C-x C-a C-r" . realgud:pdb)
+   ("C-x C-a C-a" . realgud:attach-cmd-buffer)
+   :map
+   c-mode-map
+   ("C-x C-a C-r" . realgud:gdb)
+   ("C-x C-a C-a" . realgud:attach-cmd-buffer)
+   :map
+   c++-mode-map
+   ("C-x C-a C-r" . realgud:gdb)
+   ("C-x C-a C-a" . realgud:attach-cmd-buffer)))
 
 ;; CSV Mode - Support for column-wise CSV-file visualization
 (use-package csv-mode
@@ -752,13 +801,21 @@ and line truncation."
 (use-package eglot
   :ensure t
   :hook
-  ((python-mode c-mode c++-mode) . eglot-ensure)
+  ((python-mode python-ts-mode c-mode c++-mode gdscript-mode) . eglot-ensure)
   :bind
   (:map eglot-mode-map
 	("S-<f6>" . eglot-rename))
   :config
   (add-to-list 'eglot-server-programs `(c-mode ,*ccls-binary*))
-  (add-to-list 'eglot-server-programs `(python-mode ,*pylsp-binary*)))
+  (add-to-list 'eglot-server-programs `(python-mode ,*pylsp-binary*))
+  (add-to-list 'eglot-server-programs `(python-ts-mode ,*pylsp-binary*)))
+
+;; Web dev configuration
+;; NOTE `skewer-mode' could be useful for live updates in the browser
+(use-package mhtml-mode
+  :config
+  (unbind-key "M-o" html-mode-map)
+  (unbind-key "M-o" mhtml-mode-map))
 
 ;; SQL configuration
 (use-package sql
@@ -846,7 +903,18 @@ when called interactively."
   (:map python-mode-map
    ;; Remaps that mimic the behavior of ESS
    ("C-c C-b" . python-shell-send-buffer)
-   ("C-c C-c" . python-shell-send-paragraph-or-region)))
+   ("C-c C-c" . python-shell-send-paragraph-or-region))
+  (:map python-ts-mode-map
+   ;; Remaps that mimic the behavior of ESS
+   ("C-c C-b" . python-shell-send-buffer)
+   ("C-c C-c" . python-shell-send-paragraph-or-region))
+  :init					; these can be done with local varialbes
+  (setenv "PYTHONPATH"
+	  (string-join
+	   (mapcar #'expand-file-name *additional-python-source-paths*)
+	   path-separator))
+  (when *python-virtual-environment-home-path*
+    (setenv "WORKON_HOME" (expand-file-name *python-virtual-environment-home-path*))))
 
 ;; ipython-shell-send: send snippets to inferior IPython shells (I
 ;; haven't tested it well)
@@ -936,7 +1004,7 @@ when called interactively."
 (use-package slime
   :ensure t
   :init
-  (customize-set-variable 'inferior-lisp-program *lisp-interpreter*)
+  (customize-set-variable 'inferior-lisp-program *lisp-binary*)
   :hook
   ;; Browsing the Web 1.0 CLHS is comfier from within Emacs
   (lisp-mode . (lambda ()
@@ -946,10 +1014,13 @@ when called interactively."
 			       (eww-browse-url a t)))))
   :bind
   (:map lisp-mode-map
-    ;; open the SLIME REPL instead of the native Lisp one
-    ("C-c C-z" . slime)))
+	("C-c s" . slime)))
 
 ;; Guile-Scheme support
+
+(use-package scheme
+  :custom
+  (scheme-program-name *scheme-binary*))
 
 (use-package geiser
   :ensure t)
@@ -969,6 +1040,16 @@ when called interactively."
 ;;   https://mitpress.mit.edu/sites/default/files/sicp/index.html
 (use-package sicp
   :ensure t)
+
+
+;; GDScript support
+
+(use-package gdscript-mode
+  :ensure t
+  :custom
+  (gdscript-use-tab-indents t)
+  :hook
+  (gdscript-mode . (lambda () (company-mode -1))))
 
 
 ;;;

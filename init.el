@@ -41,10 +41,10 @@
 (defvar *ccls-binary* "/usr/bin/ccls"
   "Path to the ccls executable.")
 
-(defvar *lisp-binary* "sbcl"
+(defvar *lisp-binary* "lisp"
   "The path to the Common Lisp interpreter of choice.")
 
-(defvar *scheme-binary* "guile"
+(defvar *scheme-binary* "scheme"
   "The path to the Scheme interpreter of choice.")
 
 (defvar *tree-sitter-grammars-urls*
@@ -52,8 +52,7 @@
     (bash "https://github.com/tree-sitter/tree-sitter-bash.git" "master" "src")
     (c "https://github.com/tree-sitter/tree-sitter-c.git" "master" "src")
     (cpp "https://github.com/tree-sitter/tree-sitter-cpp.git" "master" "src")
-    (css "https://github.com/tree-sitter/tree-sitter-css.git" "master" "src")
-    (gdscript "https://github.com/PrestonKnopp/tree-sitter-gdscript.git" "master" "src")))
+    (css "https://github.com/tree-sitter/tree-sitter-css.git" "master" "src")))
 
 (defvar *additional-texinfo-directories* '("/opt/local/share/info")
   "List of the nonstandard texinfo paths.")
@@ -291,8 +290,7 @@ and line truncation."
   (trash-directory (when (eq system-type 'ns)
 		     (expand-file-name "~/.Trash")))
   :config
-  (push '("\\.sbclrc" . lisp-mode) auto-mode-alist)
-  (push '("\\.godot" . conf-windows-mode) auto-mode-alist))
+  (push '("\\.sbclrc" . lisp-mode) auto-mode-alist))
 
 ;; Dired customization
 (use-package dired
@@ -697,8 +695,7 @@ and line truncation."
   (major-mode-remap-alist (append '((c-or-c++-mode . c-or-c++-ts-mode)
 				    (css-mode . css-ts-mode)
 				    (python-mode . python-ts-mode)
-				    (sh-mode . bash-ts-mode)
-				    (gdscript-mode . gdscript-ts-mode))))
+				    (sh-mode . bash-ts-mode))))
 
   :config
   ;; Automatic installation of newly configured packages after restart
@@ -801,7 +798,7 @@ and line truncation."
 (use-package eglot
   :ensure t
   :hook
-  ((python-mode python-ts-mode c-mode c++-mode gdscript-mode) . eglot-ensure)
+  ((python-mode python-ts-mode c-mode c++-mode) . eglot-ensure)
   :bind
   (:map eglot-mode-map
 	("S-<f6>" . eglot-rename))
@@ -911,7 +908,7 @@ when called interactively."
   :init					; these can be done with local varialbes
   (setenv "PYTHONPATH"
 	  (string-join
-	   (mapcar #'expand-file-name *additional-python-source-paths*)
+	   (mapcar #'expand-file-name *python-shell-extra-pythonpaths*)
 	   path-separator))
   (when *python-virtual-environment-home-path*
     (setenv "WORKON_HOME" (expand-file-name *python-virtual-environment-home-path*))))
@@ -1040,16 +1037,6 @@ when called interactively."
 ;;   https://mitpress.mit.edu/sites/default/files/sicp/index.html
 (use-package sicp
   :ensure t)
-
-
-;; GDScript support
-
-(use-package gdscript-mode
-  :ensure t
-  :custom
-  (gdscript-use-tab-indents t)
-  :hook
-  (gdscript-mode . (lambda () (company-mode -1))))
 
 
 ;;;

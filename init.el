@@ -968,7 +968,7 @@ when called interactively."
     (setenv "WORKON_HOME" (expand-file-name *python-virtual-environment-home-path*))))
 
 ;; Activate and make the inferior shell aware of virtual environments
-;; FIX: I don't remember the meaning of hook and shell specifications
+;; FIXME: I don't remember the meaning of hook and shell specifications
 (use-package pyvenv
   :ensure t
   :custom
@@ -996,7 +996,7 @@ when called interactively."
   (ein:output-area-inlined-images nil)
   (ein:jupyter-default-kernel *python-interpreter-binary*)
   :init
-  (with-eval-after-load 'mailcap        ; FIX: probably not portable
+  (with-eval-after-load 'mailcap        ; FIXME: probably not portable
     (add-to-list 'mailcap-user-mime-data '((viewer . (concat *ein-image-viewer* " %s"))
 					   (type . "image/png")))))
 
@@ -1009,7 +1009,7 @@ when called interactively."
 
 (use-package ein:notebooklist
   :bind
-  (:map ein:notebooklist ("C-c C-k" . ein:stop))) ; FIX: should be of the form 'C-c [key]'
+  (:map ein:notebooklist ("C-c C-k" . ein:stop))) ; FIXME: should be of the form 'C-c [key]'
 
 ;; C/C++ configuration and ccls
 

@@ -32,19 +32,19 @@
 (defvar *python-interpreter-binary* "python3"
   "Preferred python or ipython interpreter.")
 
-(defvar *pylsp-binary* "~/.local/bin/pylsp"
+(defvar *pylsp-binary* "/Users/Lorenzo/Library/Python/3.11/bin/pylsp"
     "Path to the pylsp executable.")
 
-(defvar *gdb-binary* "/usr/bin/gdb"
+(defvar *gdb-binary* "/opt/local/bin/ggdb"
   "gdb executable to use with gdb and gud.")
 
-(defvar *ccls-binary* "/usr/bin/ccls"
+(defvar *ccls-binary* "/opt/local/bin/ccls-clang-10"
   "Path to the ccls executable.")
 
-(defvar *lisp-binary* "lisp"
+(defvar *lisp-binary* "sbcl"
   "The path to the Common Lisp interpreter of choice.")
 
-(defvar *scheme-binary* "scheme"
+(defvar *scheme-binary* "guile"
   "The path to the Scheme interpreter of choice.")
 
 (defvar *tree-sitter-grammars-urls*

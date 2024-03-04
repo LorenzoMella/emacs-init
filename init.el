@@ -186,6 +186,20 @@ available on items that have been moved to the Bin."
     (string-remove-suffix "/" (expand-file-name path)))))
 
 
+(defun lm/browse-url-of-dired-marked-files (&optional secondary)
+  (interactive "P")
+  (dolist (file (dired-get-marked-files nil nil nil nil t))
+    (let ((browse-url-browser-function
+	   (if secondary
+	       browse-url-secondary-browser-function
+	     browse-url-browser-function))
+	  ;; Some URL handlers open files in Emacs.  We want to always
+	  ;; open in a browser, so disable those.
+	  (browse-url-default-handlers nil))
+      (if file
+	  (browse-url-of-file (expand-file-name file))
+	(error "No file on this line")))))
+
 (defun lm/whitespace-cleanup-notify (cleanup-fn &rest args)
   (let ((modified-tick (buffer-modified-tick)))
     (apply cleanup-fn args)
@@ -401,7 +415,9 @@ available on items that have been moved to the Bin."
   (dired-ls-F-marks-symlinks (eq system-type 'darwin)
     "Rename symlinks correctly, when marked with '@' by ls -lF")
   :hook
-  (dired-mode . hl-line-mode))
+  (dired-mode . hl-line-mode)
+  :config
+  (advice-add 'browse-url-of-dired-file :override #'lm/browse-url-of-dired-marked-files))
 
 ;; Package Menu customization
 (use-package package

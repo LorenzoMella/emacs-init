@@ -34,6 +34,10 @@
 (defvar *python-lsp-server-binary* "~/.pyenv/shims/pylsp"
   "Path to the chosen Python LSP Server executable.")
 
+(defvar *typescript-language-server-binary*
+  '("~/npm/bin/typescript-language-server" "--stdio")
+  "Path to the chosen JS/TS Language Server executable.")
+
 (defvar *gdb-binary* "/usr/bin/gdb"
   "Path to gdb executable.")
 
@@ -61,10 +65,11 @@
   ;; entries are of the form (LANG . (URL REVISION SOURCE-DIR CC C++)), with the
   ;; cdr (CC C++) optional
   ;; TODO Add json
-  '((python "https://github.com/tree-sitter/tree-sitter-python.git" nil "src")
-    (bash "https://github.com/tree-sitter/tree-sitter-bash.git" nil "src")
-    (c "https://github.com/tree-sitter/tree-sitter-c.git" nil "src")
-    (cpp "https://github.com/tree-sitter/tree-sitter-cpp.git" nil "src"))
+  '((bash "https://github.com/tree-sitter/tree-sitter-bash.git" "master" "src")
+    (c "https://github.com/tree-sitter/tree-sitter-c.git" "master" "src")
+    (cpp "https://github.com/tree-sitter/tree-sitter-cpp.git" "master" "src")
+    (javascript "https://github.com/tree-sitter/tree-sitter-javascript.git" "master" "src")
+    (python "https://github.com/tree-sitter/tree-sitter-python.git" "master" "src"))
   "Grammar retrieval information to populate `treesit-language-source-alist'.")
 
 (defvar *texlive-bin-path* "/usr/local/Cellar/texlive/58837_1/bin"
@@ -854,13 +859,17 @@ available on items that have been moved to the Bin."
   (:map eglot-mode-map
     ("S-<f6>" . eglot-rename))
   :hook
-  ((python-mode python-ts-mode) . eglot-ensure)
   ((c-mode c-ts-mode c++-mode c++-ts-mode) . eglot-ensure)
+  ((js-mode js-ts-mode js2-mode) . eglot-ensure)
+  ((python-mode python-ts-mode) . eglot-ensure)
   :config
   (add-to-list 'eglot-server-programs `(c-mode ,*c/c++-lsp-server-binary*))
   (add-to-list 'eglot-server-programs `(c-ts-mode ,*c/c++-lsp-server-binary*))
   (add-to-list 'eglot-server-programs `(c++-mode ,*c/c++-lsp-server-binary*))
   (add-to-list 'eglot-server-programs `(c++-ts-mode ,*c/c++-lsp-server-binary*))
+  (add-to-list 'eglot-server-programs `(js-mode ,*typescript-language-server-binary*))
+  (add-to-list 'eglot-server-programs `(js-ts-mode ,*typescript-language-server-binary*))
+  (add-to-list 'eglot-server-programs `(js2-mode ,*typescript-language-server-binary*))
   (add-to-list 'eglot-server-programs `(python-mode ,*python-lsp-server-binary*))
   (add-to-list 'eglot-server-programs `(python-ts-mode ,*python-lsp-server-binary*)))
 
@@ -913,6 +922,32 @@ must be installed at a minimum."
 (use-package poly-R
   :ensure t
   :after ess)
+
+;; JavaScript configuration
+
+(use-package js-comint
+  :ensure t)
+
+(use-package js
+  :after js-comint
+  :bind
+  (:map js-mode-map
+	("C-c C-z" . #'js-comint-repl)
+	("C-c C-c" . #'js-comint-send-last-sexp)
+	("C-c C-r" . #'js-comint-send-region)
+	("C-c C-b" . #'js-comint-send-buffer))
+  (:map js-ts-mode-map
+	("C-c C-z" . #'js-comint-repl)
+	("C-c C-c" . #'js-comint-send-last-sexp)
+	("C-c C-r" . #'js-comint-send-region)
+	("C-c C-b" . #'js-comint-send-buffer)))
+
+(use-package js2-mode
+  :ensure t
+  :init
+  (unless (version< emacs-version "29")
+    (add-to-list 'major-mode-remap-alist (cons 'javascript-mode #'js2-mode))
+    (add-to-list 'major-mode-remap-alist (cons 'js-mode #'js2-mode))))
 
 ;; Python configuration
 

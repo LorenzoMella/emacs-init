@@ -110,7 +110,7 @@
   "`Customize' will save its settings in this file.
 Set it to `nil' to append to this file.")
 
-(defvar *transparency-level* '(90 90)
+(defvar *transparency-level* '(95 95)
   "Frame transparency parameter.")
 
 (defvar *preferred-browser* #'browse-url-default-browser
@@ -164,10 +164,12 @@ and line truncation."
 	(t    ; state here = (not truncate-lines)
 	 (toggle-truncate-lines 1))))
 
-(cl-defun adjust-transparency (alpha &key (frame (window-frame)) (background nil))
+(cl-defun lm/adjust-transparency (alpha &key (frame (window-frame)) (background nil))
   "Quick interactive transparency adjustment."
   (interactive "NEnter transparency level: ")
   (set-frame-parameter frame (if background 'alpha-background 'alpha) alpha))
+
+(defalias 'adjust-transparency 'lm/adjust-transparency)
 
 (defun lm/string-from-file (path)
   "Returns the content of a text file as a string."
@@ -177,9 +179,10 @@ and line truncation."
       (buffer-string))))
 
 (defun lm/macos-move-file-to-trash (path)
-  "Replacement to `move-file-to-trash' using the native Move to Bin
-MacOS functionality. In particular, the Put Back menu option is
-available on items that have been moved to the Bin."
+  "Replacement to `move-file-to-trash' using the native MacOS 'Move
+to Bin' functionality. This is necessary if we want the 'Put
+Back' menu option to be available when right-clicking on items
+that have been moved to the Bin."
   (call-process-shell-command
    (format
     "osascript -e 'tell application \"Finder\" to move POSIX file \"%s\" to trash'"
@@ -200,11 +203,15 @@ available on items that have been moved to the Bin."
 	  (browse-url-of-file (expand-file-name file))
 	(error "No file on this line")))))
 
+
 (defun lm/whitespace-cleanup-notify (cleanup-fn &rest args)
   (let ((modified-tick (buffer-modified-tick)))
     (apply cleanup-fn args)
-    (when (> (buffer-modified-tick) modified-tick)
-      (message "Excess whitespace deleted"))))
+    (if (> (buffer-modified-tick) modified-tick)
+	(message "Excess whitespace deleted")
+      (message "(No whitespace to clean up)"))))
+
+
 ;;;
 ;;; Package management
 ;;;
@@ -213,7 +220,7 @@ available on items that have been moved to the Bin."
 (require 'package)
 
 ;; Add references to online repositories other than GNU ELPA
-(add-to-list 'package-archives '("nongnu" . "https://elpa.nongnu.org/nongnu/")) ; only effective when emacs-version < 28
+(add-to-list 'package-archives '("nongnu" . "https://elpa.nongnu.org/nongnu/")) ; only effective with Emacs 28 or earlier
 (add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/"))
 
 (package-initialize)
@@ -374,25 +381,20 @@ available on items that have been moved to the Bin."
   (tab-bar-format
    (append tab-bar-format '(tab-bar-format-align-right tab-bar-format-global))))
 
-
 ;; Files customization
 (use-package files
   :custom
   (delete-by-moving-to-trash t)
   :config
   ;; Trash behavior on MacOS
-  (when (eq window-system 'ns)
+  (when (and delete-by-moving-to-trash
+	     (eq window-system 'ns))
     (advice-add 'move-file-to-trash :override #'lm/macos-move-file-to-trash))
   ;; Additional file types
   (dolist (mode-spec *additional-auto-modes*)
     (push mode-spec auto-mode-alist)))
 
-
 ;; Dired customization
-
-(defun lm/dired-find-file-read-only ()
-  (interactive)
-  (find-file-read-only-other-window (dired-file-name-at-point)))
 
 (use-package dired
   :init
@@ -431,22 +433,20 @@ available on items that have been moved to the Bin."
   (org-startup-indented (not (version< org-version "9.5")))
   (org-special-ctrl-a/e (not (version< org-version "9.5")))
   ;; (org-agenda-files (list (expand-file-name "~/notes")))
-  (org-todo-keywords '((sequence "TODO(t)"
-				 "WAITING(w)"
-				 "|"
-				 "CANCELLED(c)"
-				 "DONE(d)")))
+  (org-todo-keywords
+   '((sequence "TODO(t)" "WAITING(w)" "|" "CANCELLED(c)" "DONE(d)")))
   :hook
   (org-mode . visual-line-mode)
   (org-agenda-mode . hl-line-mode)
   :bind
-  (:map org-mode-map
-    ("C-c t" . org-tags-view))
+  (:map org-mode-map ("C-c t" . org-tags-view))
   ("C-c a" . org-agenda)
   :config
   ;; Additional code-block expansions
-  (dolist (elem '(("b" . "src bash") ("conf" . "src conf")
-		  ("el" . "src emacs-lisp") ("py" . "src python")))
+  (dolist (elem '(("b" . "src bash")
+		  ("conf" . "src conf")
+		  ("el" . "src emacs-lisp")
+		  ("py" . "src python")))
     (add-to-list 'org-structure-template-alist elem))
   (plist-put org-format-latex-options :scale *latex-preview-scaling-in-org*)
   (dolist (x '(python jupyter))
@@ -603,7 +603,7 @@ available on items that have been moved to the Bin."
 (dolist (path *additional-bin-paths*)
   (add-to-list 'exec-path (expand-file-name path)))
 
-(setenv "PATH" 	(string-join
+(setenv "PATH"	(string-join
 		 (list (string-join exec-path path-separator)
 		       (getenv "PATH"))
 		 path-separator))
@@ -663,7 +663,7 @@ available on items that have been moved to the Bin."
   (dashboard-center-content t)
   (dashboard-page-separator "\n\f\n")
   (dashboard-startup-banner *dashboard-logo*)
-  (dashboard-banner-logo-title (format "Welcome to Emacs (%s)!" emacs-version))
+  (dashboard-banner-logo-title (format "GNU Emacs %s" emacs-version))
   (dashboard-items '((recents . 10) (bookmarks . 10) (agenda . 10)))
   (dashboard-set-footer nil)
   :config
@@ -810,7 +810,7 @@ available on items that have been moved to the Bin."
 	(upcase (file-name-nondirectory buffer-file-name))))
       "#ifndef H_" str \n
       "#define H_" str \n \n
-      _ "\n\n#endif /* " str " */"))
+      _ "\n\n#endif /* H_" str " */"))
   (define-auto-insert
     '("\\.sh\\'" . "Shell script")
     '(nil
@@ -1080,13 +1080,9 @@ when called interactively."
   :init
   (unless (version< emacs-version "29")
     (add-to-list 'major-mode-remap-alist (cons 'c-or-c++-mode #'c-or-c++-ts-mode)))
-  :hook
-  ((c-mode c-ts-mode c++-mode c++-ts-mode) . c-toggle-hungry-state)
   :bind
   (:map c-mode-map ("<f5>" . compile)
-   :map c++-mode-map ("<f5>" . compile)
-   :map c-ts-mode-map ("<f5>" . compile)
-   :map c++-ts-mode-map ("<f5>" . compile)))
+   :map c++-mode-map ("<f5>" . compile)))
 
 ;; Company backend for C/C++ headers
 (use-package company-c-headers

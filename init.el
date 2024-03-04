@@ -186,6 +186,11 @@ available on items that have been moved to the Bin."
     (string-remove-suffix "/" (expand-file-name path)))))
 
 
+(defun lm/whitespace-cleanup-notify (cleanup-fn &rest args)
+  (let ((modified-tick (buffer-modified-tick)))
+    (apply cleanup-fn args)
+    (when (> (buffer-modified-tick) modified-tick)
+      (message "Excess whitespace deleted"))))
 ;;;
 ;;; Package management
 ;;;
@@ -275,8 +280,7 @@ available on items that have been moved to the Bin."
 
 ;; Other keybindings
 (bind-key "s-m `" #'lm/cycle-line-wrap-modes)
-(bind-key "C-c w w" #'whitespace-mode)
-(bind-key "C-c w c" #'whitespace-cleanup)
+
 
 ;; Always visualize column numbers
 (column-number-mode)
@@ -336,6 +340,14 @@ available on items that have been moved to the Bin."
       (slot . 0)
       (dedicated . t)
       (window-parameters . ((no-other-window . t)))))))
+
+;; Whitespace
+(use-package whitespace
+  :init
+  (advice-add 'whitespace-cleanup :around #'lm/whitespace-cleanup-notify)
+  :bind
+  ("C-c w w" . whitespace-mode)
+  ("C-c w c" . whitespace-cleanup))
 
 ;; Tab Bar customization
 (use-package tab-bar

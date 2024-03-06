@@ -429,8 +429,10 @@ and line truncation."
 ;; (alternatively, check the mode-line-bell package)
 (customize-set-variable 'visible-bell t)
 
-;; Resize window pixel-wise with mouse
+;; Pixelwise motion
 (customize-set-variable 'frame-resize-pixelwise t)
+(unless (version< emacs-version "29")
+  (pixel-scroll-precision-mode t))
 
 ;; Optionally transparent frame
 (let ((alpha-symbol (if (and (not (version< emacs-version "29"))

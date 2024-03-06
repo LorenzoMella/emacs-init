@@ -8,7 +8,7 @@
 ;; 1. org-agenda configuration
 ;; 2. LaTeX support (`AUCTeX', `pdf-tools', `ebib', etc.)
 ;; 3. EXWM support: automatically activated if no WM is found (of course, Linux only)
-;; 4. all-the-icons (may become obsolete, with full emoji font support)
+;; 4. nerd-icons
 
 
 ;;;
@@ -95,7 +95,7 @@ Set it to `nil' to append to this file.")
 (defvar *transparency-level* 0.97
   "Global frame transparency parameter (involving both background and text).")
 
-(defvar *preferred-browser* #'browse-url-default-browser
+(defvar *preferred-browser* 'browse-url-default-browser
   "Any one of the browser symbols defined by the browse-url package.")
 
 (defvar *initial-scratch-message*
@@ -216,6 +216,10 @@ and line truncation."
   (display-time-default-load-average nil)
   (display-time-format "%a %d-%m-%Y %k:%M:%S"))
 
+;; General keybindings
+
+(require 'bind-key)
+
 ;; Remap commands to more convenient keys (the defaults still work)
 (bind-key "M-o" #'other-window)
 (bind-key "C-M-;" #'comment-line)
@@ -225,7 +229,8 @@ and line truncation."
 ;; Remap the insert-char shortcuts
 (bind-key "s-8" 'iso-transl-ctl-x-8-map key-translation-map)
 (bind-key "s-8 RET" #'counsel-unicode-char)
-  
+(bind-key "s-8 e" #'counsel-unicode-char)
+
 ;; Window-resizing keybindings
 (unbind-key "s-m") ; Normally bound to `iconify-frame' on MacOS. Use `C-z' instead
 (bind-key "s-m f" #'toggle-frame-fullscreen)
@@ -287,10 +292,7 @@ and line truncation."
       (side . bottom)
       (slot . 0)
       (dedicated . t)
-      (window-parameters . ((no-other-window . t))))
-     ("\\*Python.*"
-      display-buffer-in-direction
-      (direction . right)))))
+      (window-parameters . ((no-other-window . t)))))))
 
 ;; Files customization
 (use-package files
@@ -301,6 +303,11 @@ and line truncation."
   :config
   (push '("\\.sbclrc" . lisp-mode) auto-mode-alist)
   (push '("\\.godot" . conf-windows-mode) auto-mode-alist))
+
+;; Tab Bar Mode
+(use-package tab-bar
+  :custom
+  (tab-bar-show 1))
 
 ;; Dired customization
 (use-package dired
@@ -402,12 +409,6 @@ and line truncation."
    "Change page when scrolling beyond the top/bottom")
   (doc-view-resolution 300
    "DPIs used to render the pdf pages"))
-
-;; Eldoc configuration
-(use-package eldoc
-  :custom
-  (eldoc-echo-area-prefer-doc-buffer t)
-  (eldoc-idle-delay 0.3))
 
 ;; GUI browser configuration
 (use-package browse-url
@@ -779,8 +780,10 @@ and line truncation."
 ;; Eldoc configuration
 (use-package eldoc
   :custom
-  (eldoc-echo-area-prefer-doc-buffer t))
+  (eldoc-echo-area-prefer-doc-buffer t)
+  (eldoc-idle-delay 0.3))
 
+;; RealGUD configuration
 (use-package realgud
   :ensure t
   :bind
@@ -968,6 +971,7 @@ when called interactively."
   :custom
   (pyvenv-exec-shell *shell-binary*)
   :bind
+  ("C-c v c" . pyvenv-create)
   ("C-c v a" . pyvenv-activate)
   ("C-c v d" . pyvenv-deactivate)
   ("C-c v w" . pyvenv-workon)
@@ -979,10 +983,11 @@ when called interactively."
 	'(pyvenv-virtual-env-name
 	  ("[pyvenv:" pyvenv-virtual-env-name "] "))))
 
+;; EIN: Jupyter support (experimental setup: doesn't support lsp)
+
 (use-package jupyter
   :ensure t)
 
-;; EIN: Jupyter support (experimental setup: doesn't support lsp)
 (use-package ein
   :ensure t
   :custom
@@ -1007,11 +1012,11 @@ when called interactively."
 ;; C/C++ configuration and ccls
 
 (use-package cc-mode
-  :hook
-  ((c-mode c++-mode) . c-toggle-hungry-state)
   :bind
   (:map c-mode-map
    ("<f5>" . compile)
+   ;; :map c-ts-mode-map
+   ;; ("<f5>" . compile)
    :map c++-mode-map
    ("<f5>" . compile)))
 

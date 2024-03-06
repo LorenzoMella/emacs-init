@@ -323,7 +323,6 @@ that have been moved to the Bin."
 
 ;; No French spacing
 (customize-set-variable 'sentence-end-double-space nil)
->>>>>>> kwalee
 
 ;; Quicken many confirmation prompts
 (if (version< emacs-version "28.1")

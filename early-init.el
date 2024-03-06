@@ -1,4 +1,4 @@
-;;  early-init.el  -*- lexical-binding:t; coding:utf-8 -*-
+;;;  early-init.el  -*- lexical-binding:t; coding:utf-8 -*-
 ;;  Author: Lorenzo Mella <lorenzo.mella@hotmail.it>
 ;;  Copyright (C) 2021-2022 Lorenzo Mella
 
@@ -11,7 +11,9 @@
 (when (eq system-type 'darwin)
   (add-hook 'window-setup-hook (lambda () (setq ns-use-native-fullscreen nil))))
 
-;; Remove useless GUI widgets
-(menu-bar-mode -1)
+
 (tool-bar-mode -1)
-(scroll-bar-mode -1)
+(unless (eq window-system 'ns)
+  (tool-bar-mode -1))
+(when (fboundp #'scroll-bar-mode)
+  (scroll-bar-mode -1))

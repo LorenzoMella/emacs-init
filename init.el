@@ -41,6 +41,10 @@
 (defvar *ccls-binary* "/usr/bin/ccls"
   "Path to the ccls executable.")
 
+(defvar *typescript-language-server-binary*
+  '("~/npm/bin/typescript-language-server" "--stdio")
+  "Path to the JavaScript/TypeScript language server.")
+
 (defvar *lisp-binary* "sbcl"
   "The path to the Common Lisp interpreter of choice.")
 
@@ -48,12 +52,13 @@
   "The path to the Scheme interpreter of choice.")
 
 (defvar *tree-sitter-grammars-urls*
-  '((python "https://github.com/tree-sitter/tree-sitter-python.git" "master" "src")
-    (bash "https://github.com/tree-sitter/tree-sitter-bash.git" "master" "src")
+  '((bash "https://github.com/tree-sitter/tree-sitter-bash.git" "master" "src")
     (c "https://github.com/tree-sitter/tree-sitter-c.git" "master" "src")
     (cpp "https://github.com/tree-sitter/tree-sitter-cpp.git" "master" "src")
     (css "https://github.com/tree-sitter/tree-sitter-css.git" "master" "src")
-    (gdscript "https://github.com/PrestonKnopp/tree-sitter-gdscript.git" "master" "src")))
+    (gdscript "https://github.com/PrestonKnopp/tree-sitter-gdscript.git" "master" "src")
+    (javascript "https://github.com/tree-sitter/tree-sitter-javascript.git" "master" "src")
+    (python "https://github.com/tree-sitter/tree-sitter-python.git" "master" "src")))
 
 (defvar *additional-texinfo-directories* '("/opt/local/share/info")
   "List of the nonstandard texinfo paths.")
@@ -701,8 +706,8 @@ and line truncation."
 				    (css-mode . css-ts-mode)
 				    (python-mode . python-ts-mode)
 				    (sh-mode . bash-ts-mode)
-				    (gdscript-mode . gdscript-ts-mode))))
-
+				    (gdscript-mode . gdscript-ts-mode)
+				    (javascript-mode . js2-mode))))
   :config
   ;; Automatic installation of newly configured packages after restart
   (setq treesit-language-source-alist *tree-sitter-grammars-urls*)
@@ -804,21 +809,57 @@ and line truncation."
 (use-package eglot
   :ensure t
   :hook
-  ((python-mode python-ts-mode c-mode c++-mode gdscript-mode) . eglot-ensure)
+  ((python-mode
+    python-ts-mode
+    c-mode
+    c-ts-mode
+    c++-mode
+    c++-ts-mode
+    js-mode
+    js-ts-mode
+    js2-mode
+    gdscript-mode)
+   . eglot-ensure)
   :bind
   (:map eglot-mode-map
 	("S-<f6>" . eglot-rename))
   :config
   (add-to-list 'eglot-server-programs `(c-mode ,*ccls-binary*))
+  (add-to-list 'eglot-server-programs `(c-ts-mode ,*ccls-binary*))
+  (add-to-list 'eglot-server-programs `(js-mode ,*typescript-language-server-binary*))
+  (add-to-list 'eglot-server-programs `(js-ts-mode ,*typescript-language-server-binary*))
+  (add-to-list 'eglot-server-programs `(js2-mode ,*typescript-language-server-binary*))
   (add-to-list 'eglot-server-programs `(python-mode ,*pylsp-binary*))
   (add-to-list 'eglot-server-programs `(python-ts-mode ,*pylsp-binary*)))
 
 ;; Web dev configuration
-;; NOTE `skewer-mode' could be useful for live updates in the browser
+
 (use-package mhtml-mode
   :config
   (unbind-key "M-o" html-mode-map)
   (unbind-key "M-o" mhtml-mode-map))
+
+(use-package js
+  :after js-comint
+  :bind
+  (:map js-mode-map
+	("C-c C-b" . js-send-buffer)
+	("C-c C-c" . js-send-last-sexp)
+	("C-c C-z" . js-comint-repl)
+	("C-c C-r" . js-send-region))
+  (:map js-ts-mode-map
+	("C-c C-b" . js-send-buffer)
+	("C-c C-c" . js-send-last-sexp)
+	("C-c C-z" . js-comint-repl)
+	("C-c C-r" . js-send-region))
+  :custom
+  (js-indent-level 2))
+
+(use-package js2-mode
+  :ensure t)
+
+(use-package js-comint
+  :ensure t)
 
 ;; SQL configuration
 (use-package sql

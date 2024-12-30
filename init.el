@@ -70,6 +70,7 @@
   '((bash "https://github.com/tree-sitter/tree-sitter-bash.git" "master" "src")
     (c "https://github.com/tree-sitter/tree-sitter-c.git" "master" "src")
     (cpp "https://github.com/tree-sitter/tree-sitter-cpp.git" "master" "src")
+    (gdscript "https://github.com/PrestonKnopp/tree-sitter-gdscript.git" "master" "src")
     (javascript "https://github.com/tree-sitter/tree-sitter-javascript.git" "master" "src")
     (python "https://github.com/tree-sitter/tree-sitter-python.git" "master" "src"))
   "Grammar retrieval information to populate `treesit-language-source-alist'.")
@@ -822,6 +823,7 @@ that have been moved to the Bin."
 			    (append major-mode-remap-alist
 				    '((c-or-c++-mode . c-or-c++-ts-mode)
 				      (css-mode . css-ts-mode)
+				      (gdscript-mode . gdscript-ts-mode)
 				      (python-mode . python-ts-mode)
 				      (sh-mode . bash-ts-mode))))))
 
@@ -938,6 +940,7 @@ that have been moved to the Bin."
   (:map eglot-mode-map
     ("S-<f6>" . eglot-rename))
   :hook
+  ((gdscript-mode gdscript-ts-mode) . eglot-ensure)
   ((c-mode c-ts-mode c++-mode c++-ts-mode) . eglot-ensure)
   ((js-mode js-ts-mode js2-mode) . eglot-ensure)
   ((python-mode python-ts-mode) . eglot-ensure)
@@ -1236,6 +1239,17 @@ when called interactively."
 ;;   https://mitpress.mit.edu/sites/default/files/sicp/index.html
 (use-package sicp
   :ensure t)
+
+
+;; GDScript support
+
+(use-package gdscript-mode
+  :ensure t
+  :custom
+  (gdscript-use-tab-indents t)
+  ;; :hook
+  ;; (gdscript-mode . (lambda () (company-mode -1)))
+  )
 
 
 ;;;

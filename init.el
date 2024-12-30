@@ -696,7 +696,6 @@ that have been moved to the Bin."
   (dashboard-startup-banner *dashboard-logo*)
   (dashboard-banner-logo-title (format "GNU Emacs %s" emacs-version))
   (dashboard-items '((recents . 10) (bookmarks . 10) (agenda . 10)))
-  (dashboard-set-footer nil)
   :config
   (with-eval-after-load 'dashboard-widgets
     ;; Hooks effective after resizing the frame
@@ -704,6 +703,9 @@ that have been moved to the Bin."
     (add-hook 'dashboard-after-initialize-hook #'dashboard-jump-to-recents)
     (add-hook 'dashboard-mode-hook #'hl-line-mode)
     (add-hook 'dashboard-mode-hook #'dashboard-jump-to-recents))
+  (if (boundp 'dashboard-footer-messages)
+      (customize-set-variable 'dashboard-footer-messages nil)
+    (dashboard-set-footer nil))
   :bind
   (:map dashboard-mode-map
    ("n" . dashboard-next-line)

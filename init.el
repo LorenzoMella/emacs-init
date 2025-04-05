@@ -30,20 +30,20 @@
 (defvar *shell-binary* (getenv "SHELL") ; using the default for the current user
   "Preferred shell to use with term/ansi-term.")
 
-(defvar *python-interpreter-binary* "python3"
+(defvar *python-interpreter-binary* "python"
   "Preferred Python interpreter.")
 
 (defvar *python-lsp-server-binary* "~/.local/bin/pylsp"
   "Path to the chosen Python LSP Server executable.")
 
 (defvar *typescript-language-server-binary*
-  '("~/.local/bin/typescript-language-server" "--stdio")
+  '("/~/npm/node_modules/.bin/typescript-language-server" "--stdio")
   "Path to the chosen JS/TS Language Server executable.")
 
 (defvar *gdb-binary* "/usr/bin/gdb"
   "Path to gdb executable.")
 
-(defvar *c/c++-lsp-server-binary* "/usr/local/bin/ccls"
+(defvar *c/c++-lsp-server-binary* "/usr/bin/ccls"
   "Path to the chose C/C++ etc. LSP server executable.")
 
 (defvar *lisp-binary* "sbcl"
@@ -74,7 +74,7 @@
     (python "https://github.com/tree-sitter/tree-sitter-python.git" "master" "src"))
   "Grammar retrieval information to populate `treesit-language-source-alist'.")
 
-(defvar *texlive-bin-path* "/usr/local/texlive/bin"
+(defvar *texlive-bin-path* "/usr/bin"
   "Path to the TeXlive binaries.")
 
 (defvar *additional-bin-paths* '("~/.local/bin" "~/.pyenv/shims" "/usr/local/bin")
@@ -108,7 +108,7 @@
   "`Customize' will save its settings in this file.
 Set it to `nil' to append to this file.")
 
-(defvar *transparency-level* '(95 95)
+(defvar *transparency-level* '(97 97)
   "Frame transparency parameter.")
 
 (defvar *preferred-browser* 'browse-url-default-browser
@@ -161,10 +161,13 @@ and line truncation."
 	(t    ; state here = (not truncate-lines)
 	 (toggle-truncate-lines 1))))
 
-(cl-defun lm/adjust-transparency (alpha &key (frame (window-frame)) (background nil))
+(defun lm/adjust-transparency (alpha &optional background frame)
   "Quick interactive transparency adjustment."
   (interactive "NEnter transparency level: ")
-  (set-frame-parameter frame (if background 'alpha-background 'alpha) alpha))
+  (set-frame-parameter frame
+		       (if (not (version< emacs-version "29"))
+			   'alpha-background 'alpha)
+		       alpha))
 
 (defalias 'adjust-transparency 'lm/adjust-transparency)
 
@@ -270,15 +273,22 @@ that have been moved to the Bin."
 ;;;
 
 
+;; Initial frame fix under Gnome
+(when (and (memq (window-system) '(x pgtk))
+	   (string= (getenv "DESKTOP_SESSION") "gnome"))
+  (customize-set-variable 'initial-frame-alist
+			  '((width . 90) (height . 45)))
+  (set-frame-size nil 90 45))
+
+;; General keybindings
+
+(require 'bind-key)  ; this is a `use-package' dependency so it should be loaded anyway
+
 ;; Unbind toxic MacOS keybindings
 (when (eq (window-system) 'ns)
   (unbind-key "s-o")
   (unbind-key "s-&")
   (unbind-key "s-k"))
-
-;; General keybindings
-
-(require 'bind-key)
 
 ;; Remap commands to more convenient keys (the defaults still work)
 (bind-key "M-o" #'other-window)
@@ -308,6 +318,7 @@ that have been moved to the Bin."
 (bind-key [remap upcase-word] #'upcase-dwim)
 
 ;; Other keybindings
+(bind-key "s-m a" #'lm/adjust-transparency)
 (bind-key "s-m `" #'lm/cycle-line-wrap-modes)
 
 
@@ -342,7 +353,7 @@ that have been moved to the Bin."
   :config
   ;; These are for scrolling even when the Emacs frame of interest is in not the
   ;; active GUI window, to achieve Mac-like behavior (works under Gnome Shell
-  ;; 3.x and 40-43)
+  ;; 3.x and 40-47)
   (when (eq (window-system) 'x)
     (bind-key "<s-mouse-4>" #'mwheel-scroll)
     (bind-key "<s-mouse-5>" #'mwheel-scroll)))
@@ -351,12 +362,12 @@ that have been moved to the Bin."
   :init
   ;; TODO Ideally it should only activate with Magic Mouse or similar
   ;; smooth-scrolling devices
-  (when (eq (window-system) 'ns)
+  (when (boundp 'pixel-scroll-precision-mode)
     (pixel-scroll-precision-mode)))
 
 (use-package xt-mouse
   :init
-  (unless (window-system)
+  (unless (display-graphic-p)
     (xterm-mouse-mode)))
 
 ;; Display Buffer customization
@@ -436,24 +447,33 @@ that have been moved to the Bin."
 ;; Org customization
 
 (use-package org
-  :bind
-  ("C-c a" . org-agenda)
-  ("C-c c" . org-capture)
   :custom
   (org-ellipsis " ▸")
   ;; These work well (and together) on recent org-mode versions
   (org-special-ctrl-a/e (not (version< org-version "9.5")))
   (org-agenda-files (mapcar #'expand-file-name *org-agenda-paths*))
-  ;; (org-agenda-files (list (expand-file-name "~/notes")))
+  (org-confirm-babel-evaluate nil)
   (org-todo-keywords
    '((sequence "TODO(t)" "WAITING(w)" "|" "CANCELLED(c)" "DONE(d)")))
+  :custom-face
+  ;; The default `org-indent' face inherits from fixed-pitch, rather than
+  ;; default. Since the hidden indent characters appear on virtually every line,
+  ;; they may give the impression of an increase in `line-spacing', which is
+  ;; however left untouched.
+  (org-indent
+   ((t (:inherit org-hide))))
   :hook
   (org-mode . visual-line-mode)
   (org-mode . org-indent-mode)
   (org-agenda-mode . hl-line-mode)
   :bind
-  (:map org-mode-map ("C-c t" . org-tags-view))
   ("C-c a" . org-agenda)
+  (:map org-mode-map
+	("C-c t" . org-tags-view)
+	("M-{" . #'org-backward-paragraph)
+	("M-}" . #'org-forward-paragraph)
+	("M-p" . #'org-backward-element)
+	("M-n" . #'org-forward-element))
   :config
   ;; Additional code-block expansions
   (dolist (elem '(("b" . "src bash")
@@ -462,8 +482,9 @@ that have been moved to the Bin."
 		  ("py" . "src python")))
     (add-to-list 'org-structure-template-alist elem))
   (plist-put org-format-latex-options :scale *latex-preview-scaling-in-org*)
-  (dolist (x '(python jupyter))
-    (add-to-list 'org-babel-load-languages (cons x t))))
+  (org-babel-do-load-languages
+   'org-babel-load-languages
+   (mapcar (lambda (x) (cons x t)) '(lisp python R shell))))
 
 (use-package org-tempo
   :after org
@@ -525,19 +546,13 @@ that have been moved to the Bin."
 ;; (alternatively, check the mode-line-bell package)
 (customize-set-variable 'visible-bell t)
 
-;; Pixelwise motion
+;; Pixelwise resize
 (customize-set-variable 'frame-resize-pixelwise t)
-(unless (version< emacs-version "29")
-  (pixel-scroll-precision-mode t))
 
 ;; Optionally transparent frame
-(let ((alpha-sym (if (or (version< emacs-version "29")
-			 (not (eq (window-system) 'x)))
-		     'alpha
-		   'alpha-background)))
-  (customize-set-variable
-   'default-frame-alist
-   (add-to-list 'default-frame-alist (cons alpha-sym *transparency-level*))))
+(if (and (not (version< emacs-version "29")) (eq (window-system) 'x))
+    (lm/adjust-transparency (car *transparency-level*) t nil)
+  (lm/adjust-transparency *transparency-level* nil nil))
 
 ;; Replace the default scratch message
 (customize-set-variable 'initial-scratch-message (lm/string-from-file *initial-scratch-message*))
@@ -695,7 +710,7 @@ that have been moved to the Bin."
   (dashboard-startup-banner *dashboard-logo*)
   (dashboard-banner-logo-title (format "GNU Emacs %s" emacs-version))
   (dashboard-items '((recents . 10) (bookmarks . 10) (agenda . 10)))
-  (dashboard-set-footer nil)
+  (dashboard-footer-messages '(nil))
   :config
   (with-eval-after-load 'dashboard-widgets
     ;; Hooks effective after resizing the frame
@@ -865,19 +880,6 @@ that have been moved to the Bin."
       "main()" \n))
   (auto-insert-mode t))
 
-;; RealGUD: better debugger interface
-(use-package realgud
-  :ensure t
-  :bind
-  (:map python-mode-map
-	("C-x C-a C-r" . realgud:pdb)
-	("C-x C-a C-a" . realgud:attach-cmd-buffer)
-   :map python-ts-mode-map
-	("C-x C-a C-r" . realgud:pdb)
-	("C-x C-a C-a" . realgud:attach-cmd-buffer)
-   :map c-mode-map ("C-x C-a C-r" . realgud:gdb)
-   :map c++-mode-map ("C-x C-a C-r" . realgud:gdb)))
-
 ;; Company: inline autocompletion engine
 (use-package company
   :ensure t
@@ -890,7 +892,7 @@ that have been moved to the Bin."
    ("C-p" . company-select-previous-or-abort))
   :custom
   (company-selection-wrap-around t)
-  (company-idle-delay 0)
+  (company-idle-delay 0.0)
   (company-minimum-prefix-length 1)
   :hook
   (prog-mode . company-mode)
@@ -915,7 +917,15 @@ that have been moved to the Bin."
    ("C-x C-a C-r" . realgud:gdb)
    ("C-x C-a C-a" . realgud:attach-cmd-buffer)
    :map
+   c-ts-mode-map
+   ("C-x C-a C-r" . realgud:gdb)
+   ("C-x C-a C-a" . realgud:attach-cmd-buffer)
+   :map
    c++-mode-map
+   ("C-x C-a C-r" . realgud:gdb)
+   ("C-x C-a C-a" . realgud:attach-cmd-buffer)
+   :map
+   c++-ts-mode-map
    ("C-x C-a C-r" . realgud:gdb)
    ("C-x C-a C-a" . realgud:attach-cmd-buffer)))
 
@@ -1134,19 +1144,21 @@ when called interactively."
 (use-package ein
   :ensure t
   :custom
-  (ein:output-area-inlined-images nil)
+  ;; (ein:output-area-inlined-images nil)
   (ein:jupyter-default-kernel *python-interpreter-binary*)
-  :init
-  (with-eval-after-load 'mailcap        ; FIXME: probably not portable
-    (add-to-list 'mailcap-user-mime-data '((viewer . (concat *ein-image-viewer* " %s"))
-					   (type . "image/png")))))
+  ;; :init
+  ;; (with-eval-after-load 'mailcap        ; FIXME: probably not portable
+    ;; (add-to-list 'mailcap-user-mime-data '((viewer . (concat *ein-image-viewer* " %s"))
+					   ;; (type . "image/png"))))
+  )
 
 (use-package ein-notebook
   :bind
   (:map ein:notebook-mode-map
-   ("<C-return>" . ein:worksheet-execute-cell-and-insert-below-km)
-   ("M-n" . ein:worksheet-goto-next-input-km)
-   ("M-p" . ein:worksheet-goto-prev-input-km)))
+	("<S-return>" . ein:worksheet-execute-cell-and-insert-below-km)
+	("C-c <deletechar>" . ein:worksheet-delete-cell)
+	("M-n" . ein:worksheet-goto-next-input-km)
+	("M-p" . ein:worksheet-goto-prev-input-km)))
 
 (use-package ein:notebooklist
   :bind
@@ -1158,6 +1170,14 @@ when called interactively."
   :bind
   (:map c-mode-map ("<f5>" . compile)
    :map c++-mode-map ("<f5>" . compile)))
+
+(use-package make-mode
+  :bind
+   (:map makefile-mode-map ("<f5>" . compile)))
+
+(use-package compile
+  :custom
+  (compile-command "make -kj "))
 
 ;; Company backend for C/C++ headers
 (use-package company-c-headers
@@ -1172,7 +1192,7 @@ when called interactively."
   :custom
   (ccls-executable *c/c++-lsp-server-binary*))
 
-;; Debugger interface
+;; Native debugger interface (`gud')
 (use-package gdb-mi
   :custom
   (gud-gdb-command-name *gdb-binary*))

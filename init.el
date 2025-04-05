@@ -70,7 +70,12 @@
   '((bash "https://github.com/tree-sitter/tree-sitter-bash.git" "master" "src")
     (c "https://github.com/tree-sitter/tree-sitter-c.git" "master" "src")
     (cpp "https://github.com/tree-sitter/tree-sitter-cpp.git" "master" "src")
+    (cmake "https://github.com/uyha/tree-sitter-cmake.git" "master" "src")
+    (gdscript "https://github.com/PrestonKnopp/tree-sitter-gdscript.git" "master" "src")
+    (html "https://github.com/tree-sitter/tree-sitter-html.git" "master" "src")
+    (css "https://github.com/tree-sitter/tree-sitter-css.git" "master" "src")
     (javascript "https://github.com/tree-sitter/tree-sitter-javascript.git" "master" "src")
+    (json "https://github.com/tree-sitter/tree-sitter-json.git")
     (python "https://github.com/tree-sitter/tree-sitter-python.git" "master" "src"))
   "Grammar retrieval information to populate `treesit-language-source-alist'.")
 
@@ -81,7 +86,8 @@
   "List of paths to additional binaries.")
 
 (defvar *additional-auto-modes*
-  '(("\\.pgpass\\'" . conf-mode)
+  '(("\\.godot\\'" . conf-windows-mode)
+    ("\\.pgpass\\'" . conf-mode)
     ("\\.sbclrc\\'" . lisp-mode)))
 
 (defvar *sql-product* 'postgres
@@ -835,10 +841,13 @@ that have been moved to the Bin."
   (unless (version< emacs-version "29")
     (customize-set-variable 'major-mode-remap-alist
 			    (append major-mode-remap-alist
-				    '((c-or-c++-mode . c-or-c++-ts-mode)
-				      (css-mode . css-ts-mode)
+				    '(
+				      ;; (c-or-c++-mode . c-or-c++-ts-mode)
+				      ;; (css-mode . css-ts-mode)
+				      (gdscript-mode . gdscript-ts-mode)
 				      (python-mode . python-ts-mode)
-				      (sh-mode . bash-ts-mode))))))
+				      ;; (sh-mode . bash-ts-mode)
+				      )))))
 
 ;; Magit: highly comfy git interface
 (use-package magit
@@ -949,6 +958,7 @@ that have been moved to the Bin."
     ("S-<f6>" . eglot-rename))
   :hook
   ((c-mode c-ts-mode c++-mode c++-ts-mode) . eglot-ensure)
+  ((gdscript-mode gdscript-ts-mode) . eglot-ensure)
   ((js-mode js-ts-mode js2-mode) . eglot-ensure)
   ((python-mode python-ts-mode) . eglot-ensure)
   :config
@@ -1196,6 +1206,16 @@ when called interactively."
 (use-package gdb-mi
   :custom
   (gud-gdb-command-name *gdb-binary*))
+
+;; GDScript support
+(use-package gdscript-mode
+  :ensure t
+  :bind
+  (:map gdscript-mode-map
+	("C-c <" . gdscript-indent-shift-left)
+	("C-c >" . gdscript-indent-shift-right))
+  :custom
+  (gdscript-use-tab-indents t))
 
 ;; Common Lisp support
 

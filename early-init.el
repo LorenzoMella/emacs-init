@@ -8,12 +8,12 @@
 ;; `toggle-frame-fullscreen' will use the native fullscreen functionality,
 ;; creating a dedicated space. Subsequent calls work as intended. The unexpected
 ;; behavior is solved using `early-init.el' as done below.
-(when (eq system-type 'darwin)
+(when (eq (window-system) 'ns)
   (add-hook 'window-setup-hook (lambda () (setq ns-use-native-fullscreen nil))))
 
-
-(tool-bar-mode -1)
 (unless (eq window-system 'ns)
+  (menu-bar-mode -1))
+(when (fboundp #'tool-bar-mode)
   (tool-bar-mode -1))
 (when (fboundp #'scroll-bar-mode)
   (scroll-bar-mode -1))

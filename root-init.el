@@ -1,6 +1,6 @@
-;;  root-init.el --- A minimal terminal-based Emacs init configuration for root users -*- lexical-binding:t; coding:utf-8 -*-
+;;  root-init.el --- A minimal terminal-based Emacs init configuration for root users
 ;;  Author: Lorenzo Mella <lorenzo.mella@hotmail.it>
-;;  Copyright (C) 2021-2022 Lorenzo Mella
+;;  Copyright (C) 2021-2025 Lorenzo Mella
 
 
 ;; The configuration only relies on a basic Emacs (25+) installation. No packages from external repos are used.
@@ -75,7 +75,7 @@
 (dolist (mode (list #'subword-mode
 		    #'show-paren-mode
 		    (if (version< emacs-version "26.1")
-			#'linum-mode
+			#'linum-mode ; display-line-numbers optionally replaces linum starting from Emacs 26.1
 		      #'display-line-numbers-mode)
 		    #'electric-pair-local-mode))
   (add-hook 'prog-mode-hook mode))

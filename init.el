@@ -52,6 +52,10 @@
 (defvar *scheme-binary* "guile"
   "Path to the Scheme interpreter of choice.")
 
+(defvar *c/c++-include-paths*
+  '("/opt/local/libexec/llvm-17/include/c++/v1" "/opt/local/include")
+  "Non-standard paths to C/C++ headers.")
+
 (defvar *additional-man-paths* '("/opt/local/share/man"))
 
 (defvar *additional-texinfo-paths* '("/opt/local/share/info")
@@ -109,7 +113,7 @@
   "`Customize' will save its settings in this file.
 Set it to `nil' to append to this file.")
 
-(defvar *transparency-level* '(95 95)
+(defvar *transparency-level* 100
   "Frame transparency parameter.")
 
 (defvar *preferred-browser* 'browse-url-default-browser
@@ -216,6 +220,14 @@ that have been moved to the Bin."
     (buffer-string)))
 
 
+(defun lm/kill-buffer-other-window (&optional count)
+  (interactive)
+  (unless count
+    (setq count 1))
+  (save-excursion
+    (kill-buffer (window-buffer (next-window nil -1)))))
+
+
 ;;;
 ;;; Package management
 ;;;
@@ -310,6 +322,7 @@ that have been moved to the Bin."
 
 ;; Other keybindings
 (bind-key "s-m `" #'lm/cycle-line-wrap-modes)
+(bind-key "C-x 4 k" #'lm/kill-buffer-other-window)
 
 
 ;; Always visualize column numbers
@@ -420,7 +433,7 @@ that have been moved to the Bin."
   (dired-listing-switches
    (if (eq system-type 'gnu/linux)
        "-lahF --group-directories-first"
-     "-lahFb")
+     "-lahF")
    "ls -l readability adjustments. Group directories first when using coreutils ls")
   (dired-ls-F-marks-symlinks (eq system-type 'darwin)
     "Rename symlinks correctly, when marked with '@' by ls -lF")
@@ -702,10 +715,10 @@ that have been moved to the Bin."
     (add-hook 'dashboard-after-initialize-hook #'hl-line-mode)
     (add-hook 'dashboard-after-initialize-hook #'dashboard-jump-to-recents)
     (add-hook 'dashboard-mode-hook #'hl-line-mode)
-    (add-hook 'dashboard-mode-hook #'dashboard-jump-to-recents))
-  (if (boundp 'dashboard-footer-messages)
-      (customize-set-variable 'dashboard-footer-messages nil)
-    (dashboard-set-footer nil))
+    (add-hook 'dashboard-mode-hook #'dashboard-jump-to-recents)
+    (if (boundp 'dashboard-footer-messages)
+	(customize-set-variable 'dashboard-footer-messages '(nil))
+      (dashboard-set-footer nil)))
   :bind
   (:map dashboard-mode-map
    ("n" . dashboard-next-line)
@@ -1169,7 +1182,9 @@ when called interactively."
   :ensure t
   :after company
   :config
-  (add-to-list 'company-backends #'company-c-headers))
+  (add-to-list 'company-backends #'company-c-headers)
+  (dolist (path *c/c++-include-paths*)
+    (add-to-list 'company-c-headers-path-system path)))
 
 ;; ccls: C/C++ backend for LSP
 (use-package ccls

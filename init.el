@@ -1,15 +1,18 @@
-;;;  init.el --- Personal init configuration for general use and programming -*- lexical-binding: t; coding: utf-8 -*-
+;;;  init.el --- Personal init configuration for general use, C/C++ programming, Python, Lisp, and R -*- lexical-binding: t; coding: utf-8 -*-
 
-;;  Copyright (C) 2021-2024 Lorenzo Mella
+;;  Copyright (C) 2021-2025 Lorenzo Mella
 
-;;  Author: Lorenzo Mella <lorenzo.mella@hotmail.it>
+;;  Author: Lorenzo Mella <lorenzo.mella@yahoo.com>
 
 ;; Commentary:
 
-;; 1. org-agenda configuration
-;; 2. LaTeX support (`AUCTeX', `pdf-tools', `ebib', etc.)
-;; 3. EXWM support: automatically activated if no WM is found (of course, Linux only)
-;; 4. nerd-icons
+
+(defun lm/string-from-file (path)
+  "Returns the content of a text file as a string."
+  (save-excursion
+    (with-temp-buffer
+      (insert-file-contents path)
+      (buffer-string))))
 
 
 ;;;
@@ -25,12 +28,10 @@
 (defvar *face-variable-pitch-family* "AppleGothic")
 
 ;; Binaries and paths
-(defvar *org-agenda-paths* '())
-
 (defvar *shell-binary* (getenv "SHELL") ; using the default for the current user
-  "Preferred shell to use with term/ansi-term.")
+  "Preferred shell to use with `term'/`ansi-term'.")
 
-(defvar *python-interpreter-binary* "python3"
+(defvar *python-interpreter-binary* "python"
   "Preferred Python interpreter.")
 
 (defvar *python-lsp-server-binary* "/opt/local/bin/pylsp"
@@ -52,20 +53,17 @@
 (defvar *scheme-binary* "guile"
   "Path to the Scheme interpreter of choice.")
 
-(defvar *c/c++-include-paths*
-  '("/opt/local/libexec/llvm-17/include/c++/v1" "/opt/local/include")
-  "Non-standard paths to C/C++ headers.")
+(defvar *additional-man-paths*
+  '("/usr/local/share/man" "/opt/local/share/man"))
 
-(defvar *additional-man-paths* '("/opt/local/share/man"))
-
-(defvar *additional-texinfo-paths* '("/opt/local/share/info")
+(defvar *additional-texinfo-paths* '("/usr/local/share/info" "/opt/local/share/info")
   "List of the nonstandard texinfo paths.")
+
+(defvar *additional-python-source-paths* '("~/.local/lib/local-packages/")
+  "Paths to be added to `python-shell-extra-pythonpaths'")
 
 (defvar *python-virtual-environment-home-path* "~/.virtualenvs"
   "The directory where the Python Virtual Environments are located. Ignored if nil.")
-
-(defvar *python-shell-extra-pythonpaths* '("~/.local/site_packages")
-  "Paths to be added to `python-shell-extra-pythonpaths'")
 
 (defvar *tree-sitter-language-sources*
   ;; entries are of the form (LANG . (URL REVISION SOURCE-DIR CC C++)), with the
@@ -74,23 +72,32 @@
   '((bash "https://github.com/tree-sitter/tree-sitter-bash.git" "master" "src")
     (c "https://github.com/tree-sitter/tree-sitter-c.git" "master" "src")
     (cpp "https://github.com/tree-sitter/tree-sitter-cpp.git" "master" "src")
+    (cmake "https://github.com/uyha/tree-sitter-cmake.git" "master" "src")
     (gdscript "https://github.com/PrestonKnopp/tree-sitter-gdscript.git" "master" "src")
+    (html "https://github.com/tree-sitter/tree-sitter-html.git" "master" "src")
+    (css "https://github.com/tree-sitter/tree-sitter-css.git" "master" "src")
     (javascript "https://github.com/tree-sitter/tree-sitter-javascript.git" "master" "src")
+    (json "https://github.com/tree-sitter/tree-sitter-json.git")
     (python "https://github.com/tree-sitter/tree-sitter-python.git" "master" "src"))
   "Grammar retrieval information to populate `treesit-language-source-alist'.")
+
+(defvar *org-babel-active-languages* '(jupyter lisp python R shell sql)
+  "ob-[lang].el packages to load together with Org Mode.")
 
 (defvar *texlive-bin-path* "/usr/local/texlive/2018/bin/x86_64-darwin"
   "Path to the TeXlive binaries.")
 
-(defvar *additional-bin-paths* '("~/.local/bin" "/opt/local/bin")
+(defvar *additional-bin-paths* '("~/.local/bin" "/opt/local/bin" "/usr/local/bin")
   "List of paths to additional binaries.")
 
 (defvar *additional-auto-modes*
-  '(("\\.pgpass\\'" . conf-mode)
+  '(("\\.godot\\'" . conf-windows-mode)
+    ("\\.aws/credentials\\'" . conf-mode)
+    ("\\.pgpass\\'" . conf-mode)
     ("\\.sbclrc\\'" . lisp-mode)))
 
 (defvar *sql-product* 'postgres
-  "The default SQL dialect in sql-mode buffers.")
+  "The default SQL dialect in `sql-mode' buffers.")
 
 (defvar *sql-connection-alist*
   '(("postgres"
@@ -102,22 +109,24 @@
   "Database user/role configuration.")
 
 (defvar *ein-image-viewer* "/usr/bin/open -a Preview"
-  "Image viewing program used by the ein package (with arguments).")
+  "Image viewing program used by the EIN package (with options).")
 
 ;; Other settings
 (defvar *gc-bytes* (* 50 1024 1024) ; 50MB
   "Preferred heap threshold size to start garbage collection.")
 
-(defvar *custom-file-name*
-  (expand-file-name "custom-file.el" user-emacs-directory)
-  "`Customize' will save its settings in this file.
-Set it to `nil' to append to this file.")
+(defvar *custom-file-name* "custom-file.el"
+  "`customize' will save its settings in this file.
+Set it to nil to append to this file.")
 
-(defvar *transparency-level* 100
-  "Frame transparency parameter.")
+(defvar *transparency-alpha* 98
+  "Frame transparency alpha parameter.")
 
-(defvar *preferred-browser* 'browse-url-default-browser
-  "Any one of the browser symbols defined by the browse-url package.")
+(defvar *global-line-spacing* 0.2
+  "Distance between consecutive lines in pixels or fraction of line height.")
+
+(defvar *preferred-browser* #'browse-url-default-macosx-browser
+  "Any one of the browser symbols defined by the `browse-url' package.")
 
 (defvar *latex-preview-scaling-in-org* 2.0
   "Scaling of Latex image previews in Org Mode.")
@@ -128,9 +137,12 @@ Set it to `nil' to append to this file.")
 
 (defvar *dashboard-logo* 'logo)
 
+(defvar lm/fs-path-separator (string-remove-prefix "p" (file-name-as-directory "p"))
+  "A native way to determine the directory path separator (not to be confused with `path-separator').")
+
 
 ;;;
-;;; General purpose custom functions
+;;; Custom general-purpose functions
 ;;;
 
 
@@ -141,16 +153,38 @@ Set it to `nil' to append to this file.")
 
 (defalias 'init-show 'lm/init-show)
 
-(defun lm/frame-resize-and-center (&optional width-fraction)
+(defun lm/frame-resize-and-center (frame &optional width-fraction)
   "Resizes the frame to about two thirds of the screen."
-  (interactive '(0.618))  ; Using the inverted golden ratio in place of 2/3
+  (interactive '((window-frame) 1.0))
   (let* ((workarea (frame-monitor-attribute 'workarea))
-	 (new-width (floor (* (caddr workarea) width-fraction)))
-	 (new-height (cadddr workarea))
-	 (top-left-x (+ (car workarea) (/ (- (caddr workarea) new-width) 2)))
-	 (top-left-y (cadr workarea)))
+	 (new-height (elt workarea 3))
+	 (new-width (floor (* new-height width-fraction)))
+	 (top-left-x (+ (elt workarea 0) (/ (- (elt workarea 2) new-width) 2)))
+	 (top-left-y (elt workarea 1)))
     (set-frame-position (window-frame) top-left-x top-left-y)
     ;; TODO: somehow it is not centered. Fringes problem
+    (set-frame-size (window-frame) new-width new-height t)))
+
+(defun lm/frame-resize-left (frame)
+  "Resizes the frame to cover the left half-screen."
+  (interactive '((window-frame)))
+  (let* ((workarea (frame-monitor-attribute 'workarea))
+	 (new-height (elt workarea 3))
+	 (new-width (round (/ (elt workarea 2) 2.0)))
+	 (top-left-x (elt workarea 0))
+	 (top-left-y (elt workarea 1)))
+    (set-frame-position (window-frame) top-left-x top-left-y)
+    (set-frame-size (window-frame) new-width new-height t)))
+
+(defun lm/frame-resize-right (frame)
+  "Resizes the frame to cover the right half-screen."
+  (interactive '((window-frame)))
+  (let* ((workarea (frame-monitor-attribute 'workarea))
+	 (new-height (elt workarea 3))
+	 (new-width (round (/ (elt workarea 2) 2.0)))
+	 (top-left-x (+ new-width (elt workarea 0)))
+	 (top-left-y (elt workarea 1)))
+    (set-frame-position (window-frame) top-left-x top-left-y)
     (set-frame-size (window-frame) new-width new-height t)))
 
 (defun lm/cycle-line-wrap-modes ()
@@ -166,30 +200,25 @@ and line truncation."
 	(t    ; state here = (not truncate-lines)
 	 (toggle-truncate-lines 1))))
 
-(cl-defun lm/adjust-transparency (alpha &key (frame (window-frame)) (background nil))
+(defun lm/adjust-transparency (alpha &optional frame)
   "Quick interactive transparency adjustment."
-  (interactive "NEnter transparency level: ")
-  (set-frame-parameter frame (if background 'alpha-background 'alpha) alpha))
+  (interactive "NEnter alpha level: ")
+  (if (and (not (version< emacs-version "29"))
+	   (eq (window-system) 'x))
+      (set-frame-parameter frame 'alpha-background alpha)
+    (set-frame-parameter frame 'alpha alpha)))
 
 (defalias 'adjust-transparency 'lm/adjust-transparency)
-
-(defun lm/string-from-file (path)
-  "Returns the content of a text file as a string."
-  (save-excursion
-    (with-temp-buffer
-      (insert-file-contents path)
-      (buffer-string))))
 
 (defun lm/macos-move-file-to-trash (path)
   "Replacement to `move-file-to-trash' using the native MacOS 'Move
 to Bin' functionality. This is necessary if we want the 'Put
 Back' menu option to be available when right-clicking on items
 that have been moved to the Bin."
-  (call-process-shell-command
+  (ns-do-applescript
    (format
-    "osascript -e 'tell application \"Finder\" to move POSIX file \"%s\" to trash'"
-    (string-remove-suffix "/" (expand-file-name path)))))
-
+    "tell application \"Finder\" to move POSIX file \"%s\" to trash"
+    (directory-file-name (expand-file-name path)))))
 
 (defun lm/browse-url-of-dired-marked-files (&optional secondary)
   (interactive "P")
@@ -205,19 +234,57 @@ that have been moved to the Bin."
 	  (browse-url-of-file (expand-file-name file))
 	(error "No file on this line")))))
 
+(defun lm/browse-file-directory ()
+  (interactive)
+  (browse-url (file-name-directory (buffer-file-name))))
 
 (defun lm/whitespace-cleanup-notify (cleanup-fn &rest args)
+  "Wrapper adding echo-area messages to `whitespace-cleanup' since
+sometimes it is not obvious whether space has been deleted or
+not."
   (let ((modified-tick (buffer-modified-tick)))
     (apply cleanup-fn args)
     (if (> (buffer-modified-tick) modified-tick)
 	(message "Excess whitespace deleted")
       (message "(No whitespace to clean up)"))))
 
+(defvar *excluded-grep-directories*
+  '(".git" ".idea" ".ipynb_checkpoints" ".ccls-cache"))
 
-(defun lm/string-from-file-content (path)
-  (with-temp-buffer
-    (insert-file-contents-literally path)
-    (buffer-string)))
+(defun lm/rgrep-project (regexp &optional case-insensitive exclude-dirs exclude-glob)
+  "Recursive grep at a project-root level.
+
+Pass a possibly empty keyboard argument to do a case-insensitive search"
+  (interactive "MSearch project for regexp:\s
+P
+MExcluded directories (space-separated):\s
+MExclude files with regexp: ")
+  (setq exclude-dirs (string-split exclude-dirs nil t nil)
+	exclude-dirs (append exclude-dirs *excluded-grep-directories*))
+  (if-let ((proj (project-current)))
+      (let ((default-directory (project-root proj))
+	    (grep-format
+	     "grep --extended-regexp --color=auto --null -nHIr %s %s %s -e \"%s\"")
+	    (case-insensitive-option (if case-insensitive "-i" ""))
+	    (exclude-dir-options
+	     (seq-reduce (lambda (x y) (format "%s --exclude-dir=\"%s\"" x y)) exclude-dirs ""))
+	    (exclude-option
+	     (if (string-empty-p exclude-glob) "" (format "--exclude=\"%s\"" exclude-glob))))
+	(grep (format grep-format case-insensitive-option exclude-dir-options exclude-option regexp)))
+    (message "(Buffer %s is not part of a project)" (buffer-name))))
+
+(defun lm/vterm-right (&optional arg)
+  "Displays `vterm' on the right of the screen, starting a terminal if necessary."
+  (interactive "P")
+  (if (= 0 (window-pixel-left))
+      (vterm-other-window arg)
+    (vterm arg)))
+
+(defun lm/kill-buffer-other-window ()
+  (interactive)
+  (kill-buffer (window-buffer (other-window-for-scrolling))))
+
+(defalias 'kill-buffer-other-window #'lm/kill-buffer-other-window)
 
 
 (defun lm/kill-buffer-other-window (&optional count)
@@ -242,10 +309,10 @@ that have been moved to the Bin."
 (package-initialize)
 
 ;; Package management will be handled by use-package
-(when (and (version< emacs-version "29.0.60") ; earliest version that I verified comes with `use-package'
+(when (and (version< emacs-version "29.0.60")
 	   (not (package-installed-p 'use-package)))
-  (package-refresh-contents)
-  (package-install 'use-package))
+    (package-refresh-contents)
+    (package-install 'use-package))
 
 ;; Keep ELPA keys up to date
 (use-package gnu-elpa-keyring-update
@@ -257,7 +324,7 @@ that have been moved to the Bin."
 ;;;
 
 
-(setq custom-file *custom-file-name*)
+(setq custom-file (expand-file-name *custom-file-name* user-emacs-directory))
 
 (unless (file-exists-p *custom-file-name*)
   (make-empty-file *custom-file-name*))
@@ -283,33 +350,41 @@ that have been moved to the Bin."
 ;;;
 
 
+;; Initial frame fix under Gnome
+(when (and (memq (window-system) '(x pgtk))
+	   (string= (getenv "DESKTOP_SESSION") "gnome"))
+  (customize-set-variable 'initial-frame-alist
+			  '((width . 90) (height . 45)))
+  (set-frame-size nil 90 45))
+
+;; General keybindings
+
+(require 'bind-key)  ; this is a `use-package' dependency so it should be loaded anyway
+
 ;; Unbind toxic MacOS keybindings
 (when (eq (window-system) 'ns)
   (unbind-key "s-o")
   (unbind-key "s-&")
   (unbind-key "s-k"))
 
-;; General keybindings
-
-(require 'bind-key)
-
 ;; Remap commands to more convenient keys (the defaults still work)
 (bind-key "M-o" #'other-window)
 (bind-key "C-M-;" #'comment-line)
-(unless (eq (window-system) 'ns)	; Already in place on MacOS
+(unless (eq (window-system) 'ns)   ; Already in place in MacOS
   (bind-key "s-=" #'text-scale-increase)
   (bind-key "s--" #'text-scale-decrease)
   (bind-key "s-u" #'revert-buffer))
 
 ;; Remap the insert-char shortcuts
 (bind-key "s-8" 'iso-transl-ctl-x-8-map key-translation-map)
-(bind-key "s-8 RET" 'counsel-unicode-char)
 
 ;; Window-resizing keybindings
 (unbind-key "s-m") ; Normally bound to `iconify-frame' on MacOS. Use `C-z' instead
 (bind-key "s-m f" #'toggle-frame-fullscreen)
 (bind-key "s-m m" #'toggle-frame-maximized)
 (bind-key "s-m c" #'lm/frame-resize-and-center)
+(bind-key "s-m <left>" #'lm/frame-resize-left)
+(bind-key "s-m <right>" #'lm/frame-resize-right)
 (bind-key "s-m s" #'window-toggle-side-windows)
 
 ;; Remap keys to more convenient commands
@@ -321,9 +396,13 @@ that have been moved to the Bin."
 (bind-key [remap upcase-word] #'upcase-dwim)
 
 ;; Other keybindings
+(bind-key "s-m a" #'lm/adjust-transparency)
 (bind-key "s-m `" #'lm/cycle-line-wrap-modes)
+(bind-key "s-m a" #'lm/adjust-transparency)
+(bind-key "s-m w" #'window-swap-states)
+(bind-key "M-s r" #'lm/rgrep-project)
+(bind-key "C-c t" #'lm/vterm-right)
 (bind-key "C-x 4 k" #'lm/kill-buffer-other-window)
-
 
 ;; Always visualize column numbers
 (column-number-mode)
@@ -341,9 +420,9 @@ that have been moved to the Bin."
 (customize-set-variable 'sentence-end-double-space nil)
 
 ;; Quicken many confirmation prompts
-(if (version< emacs-version "28.1")
-    (defalias 'yes-or-no-p 'y-or-n-p)
-  (customize-set-variable 'use-short-answers t))
+(if (boundp 'use-short-answers)
+    (customize-set-variable 'use-short-answers t)
+  (defalias 'yes-or-no-p 'y-or-n-p))
 
 ;; Mouse configuration
 
@@ -356,7 +435,7 @@ that have been moved to the Bin."
   :config
   ;; These are for scrolling even when the Emacs frame of interest is in not the
   ;; active GUI window, to achieve Mac-like behavior (works under Gnome Shell
-  ;; 3.x and 40-43)
+  ;; 3.x and 40-47)
   (when (eq (window-system) 'x)
     (bind-key "<s-mouse-4>" #'mwheel-scroll)
     (bind-key "<s-mouse-5>" #'mwheel-scroll)))
@@ -365,12 +444,12 @@ that have been moved to the Bin."
   :init
   ;; TODO Ideally it should only activate with Magic Mouse or similar
   ;; smooth-scrolling devices
-  (when (eq (window-system) 'ns)
+  (when (boundp 'pixel-scroll-precision-mode)
     (pixel-scroll-precision-mode)))
 
 (use-package xt-mouse
   :init
-  (unless (window-system)
+  (unless (display-graphic-p)
     (xterm-mouse-mode)))
 
 ;; Display Buffer customization
@@ -414,15 +493,13 @@ that have been moved to the Bin."
     (advice-add 'move-file-to-trash :override #'lm/macos-move-file-to-trash))
   ;; Additional file types
   (dolist (mode-spec *additional-auto-modes*)
-    (push mode-spec auto-mode-alist)))
+    (add-to-list 'auto-mode-alist mode-spec)))
 
 ;; Dired customization
-
 (use-package dired
-  :init
-  (require 'dired-x)
   :bind
   (:map dired-mode-map
+    ("r" . lm/dired-find-file-read-only)
     ("C-c a" . auto-revert-mode)
     ("<mouse-2>" . dired-find-file))
   :custom
@@ -434,12 +511,13 @@ that have been moved to the Bin."
    (if (eq system-type 'gnu/linux)
        "-lahF --group-directories-first"
      "-lahF")
-   "ls -l readability adjustments. Group directories first when using coreutils ls")
+    "ls -l readability adjustments. Group directories first when using coreutils ls")
   (dired-ls-F-marks-symlinks (eq system-type 'darwin)
     "Rename symlinks correctly, when marked with '@' by ls -lF")
   :hook
   (dired-mode . hl-line-mode)
   :config
+  (require 'dired-x)
   (advice-add 'browse-url-of-dired-file :override #'lm/browse-url-of-dired-marked-files))
 
 ;; Package Menu customization
@@ -448,26 +526,34 @@ that have been moved to the Bin."
   (package-menu-mode . hl-line-mode))
 
 ;; Org customization
-
 (use-package org
-  :bind
-  ("C-c a" . org-agenda)
-  ("C-c c" . org-capture)
   :custom
   (org-ellipsis " ▸")
-  ;; These work well (and together) on recent org-mode versions
+  (org-startup-indented (not (version< org-version "9.5")))
   (org-special-ctrl-a/e (not (version< org-version "9.5")))
-  (org-agenda-files (mapcar #'expand-file-name *org-agenda-paths*))
-  ;; (org-agenda-files (list (expand-file-name "~/notes")))
+  ;; (org-agenda-files (mapcar #'expand-file-name *org-agenda-paths*))
+  (org-confirm-babel-evaluate nil)
   (org-todo-keywords
    '((sequence "TODO(t)" "WAITING(w)" "|" "CANCELLED(c)" "DONE(d)")))
+  :custom-face
+  ;; The default `org-indent' face inherits from fixed-pitch, rather than
+  ;; default. Since the hidden indent characters appear on virtually every line,
+  ;; they may give the impression of an increase in `line-spacing', which is
+  ;; however left untouched.
+  (org-indent
+   ((t (:inherit org-hide))))
   :hook
   (org-mode . visual-line-mode)
-  (org-mode . org-indent-mode)
   (org-agenda-mode . hl-line-mode)
   :bind
-  (:map org-mode-map ("C-c t" . org-tags-view))
   ("C-c a" . org-agenda)
+  (:map org-mode-map
+	("C-c l" . org-toggle-link-display)
+	("C-c t" . org-tags-view)
+	("M-p" . org-backward-element)
+	("M-n" . org-forward-element)
+	("M-{" . org-backward-paragraph)
+	("M-}" . org-forward-paragraph))
   :config
   ;; Additional code-block expansions
   (dolist (elem '(("b" . "src bash")
@@ -475,17 +561,19 @@ that have been moved to the Bin."
 		  ("el" . "src emacs-lisp")
 		  ("py" . "src python")))
     (add-to-list 'org-structure-template-alist elem))
+  ;; Adjust the LaTeX rendering scale multiplier
   (plist-put org-format-latex-options :scale *latex-preview-scaling-in-org*)
-  (dolist (x '(python jupyter))
-    (add-to-list 'org-babel-load-languages (cons x t))))
+  ;; Load Additional Org Babel Languages
+  (org-babel-do-load-languages
+   'org-babel-load-languages
+   (mapcar (lambda (x) `(,x . t)) *org-babel-active-languages*)))
 
 (use-package org-tempo
   :after org
   :config
   (dolist (elem '(("t" . "title")
 		  ("au" . "author")
-		  ("d" . "date")
-		  ("n" . "name")))
+		  ("d" . "date")))
     (add-to-list 'org-tempo-keywords-alist elem)))
 
 ;; Help buffer customization
@@ -515,14 +603,15 @@ that have been moved to the Bin."
   :custom
   (doc-view-resolution 300) ; increase the DPI count (the default is too conservative)
   (doc-view-continuous t
-   "Change page when scrolling beyond the top/bottom")
-  (doc-view-resolution 300
-   "DPIs used to render the pdf pages"))
+    "Change page when scrolling beyond the top/bottom"))
 
 ;; GUI browser configuration
 (use-package browse-url
   :custom
   (browse-url-browser-function *preferred-browser*))
+
+(use-package image
+  :bind (:map image-mode-map ("W" . lm/browse-file-directory)))
 
 ;; Markdown mode configuration
 (use-package markdown-mode
@@ -535,23 +624,19 @@ that have been moved to the Bin."
 ;;;
 
 
+;; TODO Set up `move-frame-functions' to correctly update the fullscreen position when switching screens
+
 ;; System-dependent visual replacement for the beep warning sound
 ;; (alternatively, check the mode-line-bell package)
 (customize-set-variable 'visible-bell t)
 
-;; Pixelwise motion
+;; Resize window pixel-wise with mouse
 (customize-set-variable 'frame-resize-pixelwise t)
-(unless (version< emacs-version "29")
-  (pixel-scroll-precision-mode t))
 
 ;; Optionally transparent frame
-(let ((alpha-sym (if (or (version< emacs-version "29")
-			 (not (eq (window-system) 'x)))
-		     'alpha
-		   'alpha-background)))
-  (customize-set-variable
-   'default-frame-alist
-   (add-to-list 'default-frame-alist (cons alpha-sym *transparency-level*))))
+(customize-set-variable
+ 'default-frame-alist
+ (add-to-list 'default-frame-alist (cons 'alpha *transparency-alpha*)))
 
 ;; Replace the default scratch message
 (customize-set-variable 'initial-scratch-message (lm/string-from-file *initial-scratch-message*))
@@ -564,14 +649,13 @@ that have been moved to the Bin."
 
 ;; Display Time Mode appearance
 (use-package time
+  :defer t
   :custom
   (display-time-interval 1)
   (display-time-default-load-average nil)
   (display-time-format "%a %d %b  %T"))
 
-;; Theme overlays
-
-;; Isolate themes not managed by the package managers (e.g., user-created ones)
+;; Isolate themes not managed by `package' or `use-package' (e.g., user-created ones)
 (let ((theme-directory (expand-file-name "themes" user-emacs-directory)))
   (when (file-exists-p theme-directory)
     (customize-set-variable 'custom-theme-directory theme-directory)))
@@ -601,19 +685,16 @@ that have been moved to the Bin."
   (variable-pitch
    ((t (:inherit unspecified :family ,*face-variable-pitch-family*))))
   (line-number
-   ((t (:inherit shadow :height 0.8))))
+   ((t (:inherit (shadow default) :height 0.8))))
   (line-number-current-line  ; make the height the same as line-number
-   ((t (:inherit line-number)))))
-
-(use-package info
-  :custom-face
-  (Info-quoted
-   ((t (:inherit fixed-pitch-serif)))))
+  ((t (:inherit line-number)))))
 
 (use-package cus-edit
   :custom-face
   (custom-variable-obsolete
    ((t (:inherit custom-variable-tag :strike-through t :weight normal)))))
+
+(customize-set-variable 'line-spacing *global-line-spacing*)
 
 
 ;;;
@@ -631,7 +712,7 @@ that have been moved to the Bin."
 ;; (this may happen on MacOS)
 (dolist (env-var '("LANG" "LANGUAGE" "LC_CTYPE" "LC_COLLATE"
 		   "LC_TIME" "LC_MESSAGES" "LC_MONETARY"))
-  (let (locale (getenv env-var))
+  (let ((locale (getenv env-var)))
     (when (or (null locale) (string= locale "C"))
       (setenv env-var "en_US.UTF-8"))))
 
@@ -646,16 +727,17 @@ that have been moved to the Bin."
 (dolist (path *additional-bin-paths*)
   (add-to-list 'exec-path (expand-file-name path)))
 
-(setenv "PATH"	(string-join
-		 (list (string-join exec-path path-separator)
-		       (getenv "PATH"))
-		 path-separator))
+(setenv "PATH"
+	(string-join
+	 (list (string-join exec-path path-separator)
+	       (getenv "PATH"))
+	 path-separator))
 
 ;; Also update man paths
 (setenv "MANPATH"
 	(string-join
-	 (list (string-join *additional-man-paths* path-separator)
-	       (getenv "MANPATH"))
+	 (cons (getenv "MANPATH")
+	       (mapcar #'expand-file-name *additional-man-paths*))
 	 path-separator))
 
 
@@ -667,7 +749,6 @@ that have been moved to the Bin."
 (use-package vterm
   :ensure t
   :custom
-  (vterm-shell *shell-binary*)
   (vterm-max-scrollback 10000))
 
 
@@ -730,13 +811,11 @@ that have been moved to the Bin."
   :custom
   (avy-style 'words)
   :bind
-  ("C-;" . avy-goto-char)
-  :custom
-  (avy-style 'words))
+  ("C-;" . avy-goto-char))
 
 ;; Which Key: much needed pop-up help for prefix keymaps
 (use-package which-key
-  :ensure t
+  :ensure t  ; available starting with Emacs 30
   :diminish
   :config
   (which-key-mode))
@@ -746,6 +825,7 @@ that have been moved to the Bin."
   :ensure t)
 
 ;; Org Bullets: beautify org headers with circles instead of *
+;; TODO no longer maintained: replace with org-superstar.
 (use-package org-bullets
   :ensure t
   :after org
@@ -785,6 +865,8 @@ that have been moved to the Bin."
   ;; (compared to ivy-switch-buffer and ivy-switch-buffer-other-window)
   ("C-x C-b" . counsel-switch-buffer)
   ("C-x 4 b" . counsel-switch-buffer-other-window)
+  ;; Other bindings
+  ("C-c g" . counsel-git-grep)
   ("s-8 RET" . counsel-unicode-char))
 
 ;; Prescient: frequency-based result rankings
@@ -823,7 +905,8 @@ that have been moved to the Bin."
   ((prog-mode . subword-mode)
    (prog-mode . show-paren-mode)
    (prog-mode . display-line-numbers-mode)
-   (prog-mode . electric-pair-local-mode)))
+   (prog-mode . electric-pair-local-mode)
+   (prog-mode . (lambda () (add-hook 'before-save-hook #'whitespace-cleanup)))))
 
 ;; Tree-Sitter grammars configuration
 (use-package treesit
@@ -834,13 +917,14 @@ that have been moved to the Bin."
     (unless (treesit-language-available-p (car lang-spec))
       (treesit-install-language-grammar (car lang-spec))))
   (unless (version< emacs-version "29")
-    (customize-set-variable 'major-mode-remap-alist
-			    (append major-mode-remap-alist
-				    '((c-or-c++-mode . c-or-c++-ts-mode)
-				      (css-mode . css-ts-mode)
-				      (gdscript-mode . gdscript-ts-mode)
-				      (python-mode . python-ts-mode)
-				      (sh-mode . bash-ts-mode))))))
+    (customize-set-variable
+     'major-mode-remap-alist
+     (append major-mode-remap-alist
+	     '((c-or-c++-mode . c-or-c++-ts-mode)
+	       (css-mode . css-ts-mode)
+	       (gdscript-mode . gdscript-ts-mode)
+	       (python-mode . python-ts-mode)
+	       (sh-mode . bash-ts-mode))))))
 
 ;; Magit: highly comfy git interface
 (use-package magit
@@ -859,14 +943,15 @@ that have been moved to the Bin."
 					     (string= (cdr x) y)))))
   (define-auto-insert
     '("\\.\\([Hh]\\|hh\\|hpp\\|hxx\\|h\\+\\+\\)\\'" . "C / C++ header")
-    '((replace-regexp-in-string
-       "[^A-Z0-9]" "_"
-       (replace-regexp-in-string
-	"\\+" "P"
-	(upcase (file-name-nondirectory buffer-file-name))))
+    '((thread-last buffer-file-name
+		   (file-name-nondirectory)
+		   (upcase)
+		   (replace-regexp-in-string "\\.[^.]*\\+[^.]*" "P")
+		   (replace-regexp-in-string "[^A-Z0-9]" "_"))
       "#ifndef H_" str \n
       "#define H_" str \n \n
-      _ "\n\n#endif /* H_" str " */"))
+      _
+      "\n\n#endif /* H_" str " */"))
   (define-auto-insert
     '("\\.sh\\'" . "Shell script")
     '(nil
@@ -877,23 +962,11 @@ that have been moved to the Bin."
        "[^A-Z0-9]" "_")
       "#!/usr/bin/env python" \n \n \n
       "def main():" \n
-      _ "pass" \n \n \n
+      _
+      "pass" \n \n \n
       "if __name__ == '__main__':" \n
       "main()" \n))
   (auto-insert-mode t))
-
-;; RealGUD: better debugger interface
-(use-package realgud
-  :ensure t
-  :bind
-  (:map python-mode-map
-	("C-x C-a C-r" . realgud:pdb)
-	("C-x C-a C-a" . realgud:attach-cmd-buffer)
-   :map python-ts-mode-map
-	("C-x C-a C-r" . realgud:pdb)
-	("C-x C-a C-a" . realgud:attach-cmd-buffer)
-   :map c-mode-map ("C-x C-a C-r" . realgud:gdb)
-   :map c++-mode-map ("C-x C-a C-r" . realgud:gdb)))
 
 ;; Company: inline autocompletion engine
 (use-package company
@@ -907,7 +980,7 @@ that have been moved to the Bin."
    ("C-p" . company-select-previous-or-abort))
   :custom
   (company-selection-wrap-around t)
-  (company-idle-delay 0)
+  (company-idle-delay 0.0)
   (company-minimum-prefix-length 1)
   :hook
   (prog-mode . company-mode)
@@ -916,8 +989,7 @@ that have been moved to the Bin."
 ;; Eldoc configuration
 (use-package eldoc
   :custom
-  (eldoc-echo-area-prefer-doc-buffer t)
-  (eldoc-idle-delay 0.3))
+  (eldoc-echo-area-prefer-doc-buffer t))
 
 ;; RealGUD configuration
 (use-package realgud
@@ -932,7 +1004,15 @@ that have been moved to the Bin."
    ("C-x C-a C-r" . realgud:gdb)
    ("C-x C-a C-a" . realgud:attach-cmd-buffer)
    :map
+   c-ts-mode-map
+   ("C-x C-a C-r" . realgud:gdb)
+   ("C-x C-a C-a" . realgud:attach-cmd-buffer)
+   :map
    c++-mode-map
+   ("C-x C-a C-r" . realgud:gdb)
+   ("C-x C-a C-a" . realgud:attach-cmd-buffer)
+   :map
+   c++-ts-mode-map
    ("C-x C-a C-r" . realgud:gdb)
    ("C-x C-a C-a" . realgud:attach-cmd-buffer)))
 
@@ -946,9 +1026,8 @@ that have been moved to the Bin."
   ;; (csv-mode . display-line-numbers-mode)
   (csv-mode . hl-line-mode))
 
-;; Bash
-
 ;; Eglot support for Microsoft's Language Server Protocol (LSP)
+
 (use-package eglot
   :ensure t
   :bind
@@ -957,6 +1036,7 @@ that have been moved to the Bin."
   :hook
   ((gdscript-mode gdscript-ts-mode) . eglot-ensure)
   ((c-mode c-ts-mode c++-mode c++-ts-mode) . eglot-ensure)
+  ((gdscript-mode gdscript-ts-mode) . eglot-ensure)
   ((js-mode js-ts-mode js2-mode) . eglot-ensure)
   ((python-mode python-ts-mode) . eglot-ensure)
   :config
@@ -970,35 +1050,6 @@ that have been moved to the Bin."
   (add-to-list 'eglot-server-programs `(python-mode ,*python-lsp-server-binary*))
   (add-to-list 'eglot-server-programs `(python-ts-mode ,*python-lsp-server-binary*)))
 
-;; Web dev configuration
-
-(use-package mhtml-mode
-  :config
-  (unbind-key "M-o" html-mode-map)
-  (unbind-key "M-o" mhtml-mode-map))
-
-(use-package js
-  :after js-comint
-  :bind
-  (:map js-mode-map
-	("C-c C-b" . js-send-buffer)
-	("C-c C-c" . js-send-last-sexp)
-	("C-c C-z" . js-comint-repl)
-	("C-c C-r" . js-send-region))
-  (:map js-ts-mode-map
-	("C-c C-b" . js-send-buffer)
-	("C-c C-c" . js-send-last-sexp)
-	("C-c C-z" . js-comint-repl)
-	("C-c C-r" . js-send-region))
-  :custom
-  (js-indent-level 2))
-
-(use-package js2-mode
-  :ensure t)
-
-(use-package js-comint
-  :ensure t)
-
 ;; SQL configuration
 (use-package sql-indent
   :ensure t)
@@ -1009,9 +1060,9 @@ that have been moved to the Bin."
   (sql-connection-alist *sql-connection-alist*)
   :hook
   (sql-mode . sqlind-minor-mode)
-  :bind
-  ("C-c C-p" . sql-connect)
-  ("C-<return>" . sql-send-paragraph))
+  :bind (:map sql-mode-map
+	      ("C-c C-p" . sql-connect)
+	      ("C-<return>" . sql-send-paragraph)))
 
 ;; ESS - Emacs Speaks Statistics: R and R Markdown suite
 
@@ -1069,7 +1120,11 @@ must be installed at a minimum."
 	("C-c C-b" . #'js-comint-send-buffer)))
 
 (use-package js2-mode
-  :ensure t)
+  :ensure t
+  :init
+  (unless (version< emacs-version "29")
+    (add-to-list 'major-mode-remap-alist (cons 'javascript-mode #'js2-mode))
+    (add-to-list 'major-mode-remap-alist (cons 'js-mode #'js2-mode))))
 
 ;; Python configuration
 
@@ -1098,40 +1153,40 @@ when called interactively."
     (backward-paragraph)
     (forward-line)))
 
+;; TODO use `python-shell-send-block' (Emacs 30+) instead of
+;; `python-shell-send-paragraph-or-region'
+;; UPDATE: not really. It doesn't do the same thing. But looking at its code
+;; could be useful to write a better version of my funciton
 (use-package python
-  :init					; these can be done with local variables
-  (setenv "PYTHONPATH"
-	  (string-join
-	   (mapcar #'expand-file-name *python-shell-extra-pythonpaths*)
-	   path-separator))
-  (when *python-virtual-environment-home-path* ; FIXME  why use `when'?
-    ;; The easiest way to let pyvenv etc. know where to create virtual environments
-    (setenv "WORKON_HOME" (expand-file-name *python-virtual-environment-home-path*)))
   :custom
-  (python-shell-extra-pythonpaths
-   (mapcar #'expand-file-name *python-shell-extra-pythonpaths*))
   (python-indent-offset 4)
-  (python-shell-completion-native-enable
-   (not (eq system-type 'darwin))
+  (python-shell-completion-native-enable ; TODO possibly caused by not installing readline from PyPI
+   (if (not (equal system-type 'darwin)) t)
    "Native shell completion doesn't work on MacOS")
   :bind
   ;; Remaps that mimic the behavior of ESS
   (:map python-mode-map
-	("C-c C-b" . python-shell-send-buffer)
-	("C-c C-c" . python-shell-send-paragraph-or-region))
+   ("C-c C-b" . python-shell-send-buffer)
+   ("C-c C-c" . python-shell-send-paragraph-or-region))
   (:map python-ts-mode-map
-	("C-c C-b" . python-shell-send-buffer)
-	("C-c C-c" . python-shell-send-paragraph-or-region)))
+   ("C-c C-b" . python-shell-send-buffer)
+   ("C-c C-c" . python-shell-send-paragraph-or-region))
+  :init ; these can be done with local variables
+  (setenv "PYTHONPATH"
+	  (string-join
+	   (mapcar #'expand-file-name *additional-python-source-paths*)
+	   path-separator))
+  (when *python-virtual-environment-home-path* ; FIXME  why use `when'?
+    ;; The easiest way to let pyvenv etc. know where to create virtual environments
+    (setenv "WORKON_HOME" (expand-file-name *python-virtual-environment-home-path*))))
 
 ;; Activate and make the inferior shell aware of virtual environments
 ;; FIXME: I don't remember the meaning of hook and shell specifications
 (use-package pyvenv
   :ensure t
-  :commands pyvenv-create
   :custom
   (pyvenv-exec-shell *shell-binary*)
   :bind
-  ("C-c v c" . pyvenv-create)
   ("C-c v a" . pyvenv-activate)
   ("C-c v c" . pyvenv-create)
   ("C-c v d" . pyvenv-deactivate)
@@ -1142,33 +1197,34 @@ when called interactively."
   :config
   (setq pyvenv-mode-line-indicator
 	'(pyvenv-virtual-env-name
-	  ("[pyvenv:" pyvenv-virtual-env-name "] "))))
-
-;; EIN: Jupyter support (experimental setup: doesn't support lsp)
+	  (#("[pyvenv:" 1 6 (face bold)) pyvenv-virtual-env-name "] "))))
 
 (use-package jupyter
   :ensure t)
 
+;; EIN: Jupyter support (experimental setup: doesn't support lsp)
 (use-package ein
   :ensure t
   :custom
-  (ein:output-area-inlined-images nil)
+  (ein:output-area-inlined-images t)
   (ein:jupyter-default-kernel *python-interpreter-binary*)
   :init
-  (with-eval-after-load 'mailcap        ; FIXME: probably not portable
-    (add-to-list 'mailcap-user-mime-data '((viewer . (concat *ein-image-viewer* " %s"))
-					   (type . "image/png")))))
+  ;; (with-eval-after-load 'mailcap
+    ;; (add-to-list 'mailcap-user-mime-data '((viewer . (concat *ein-image-viewer* " %s"))
+					   ;; (type . "image/png"))))
+  )
 
 (use-package ein-notebook
   :bind
   (:map ein:notebook-mode-map
-   ("<C-return>" . ein:worksheet-execute-cell-and-insert-below-km)
-   ("M-n" . ein:worksheet-goto-next-input-km)
-   ("M-p" . ein:worksheet-goto-prev-input-km)))
+	("<S-return>" . ein:worksheet-execute-cell-and-insert-below-km)
+	("C-c <deletechar>" . ein:worksheet-delete-cell)
+	("M-n" . ein:worksheet-goto-next-input-km)
+	("M-p" . ein:worksheet-goto-prev-input-km)))
 
-(use-package ein:notebooklist
+(use-package ein-notebooklist
   :bind
-  (:map ein:notebooklist ("C-c C-k" . ein:stop))) ; FIXME: should be of the form 'C-c [key]'
+  (:map ein:notebooklist ("C-c C-k" . ein:stop)))
 
 ;; C/C++ configuration and ccls
 
@@ -1177,14 +1233,24 @@ when called interactively."
   (:map c-mode-map ("<f5>" . compile)
    :map c++-mode-map ("<f5>" . compile)))
 
+(use-package make-mode
+  :bind
+   (:map makefile-mode-map ("<f5>" . compile)))
+
+(use-package compile
+  :custom
+  (compile-command "make -kj "))
+
 ;; Company backend for C/C++ headers
 (use-package company-c-headers
   :ensure t
   :after company
   :config
   (add-to-list 'company-backends #'company-c-headers)
-  (dolist (path *c/c++-include-paths*)
-    (add-to-list 'company-c-headers-path-system path)))
+  (dolist (path '("~/.local/include"
+		  "/opt/local/include"
+		  "/user/local/include"))
+    (add-to-list 'company-c-headers-path-system (expand-file-name path))))
 
 ;; ccls: C/C++ backend for LSP
 (use-package ccls
@@ -1192,34 +1258,19 @@ when called interactively."
   :custom
   (ccls-executable *c/c++-lsp-server-binary*))
 
-;; Debugger interface
+;; Native debugger interface (`gud')
 (use-package gdb-mi
   :custom
   (gud-gdb-command-name *gdb-binary*))
 
 ;; Common Lisp support
 
-(use-package slime-company
-  :ensure t
-  :config
-  (add-to-list 'company-backends #'company-slime))
-
 (use-package slime
   :ensure t
   :commands slime
   :bind (:map lisp-mode-map ("C-c s" . slime))
   :init
-  (customize-set-variable 'inferior-lisp-program *lisp-binary*)
-  :hook
-  ;; Browsing the Web 1.0 CLHS is comfier from within Emacs
-  (lisp-mode . (lambda ()
-		 (setq-local browse-url-browser-function
-			     (lambda (a &optional b)
-			       ;; (other-window 1)
-			       (eww-browse-url a t)))))
-  :bind
-  (:map lisp-mode-map
-	("C-c s" . slime)))
+  (customize-set-variable 'inferior-lisp-program *lisp-binary*))
 
 (use-package slime-company
   :ensure t
@@ -1227,10 +1278,6 @@ when called interactively."
   (add-to-list 'company-backends #'company-slime))
 
 ;; Guile Scheme support
-
-(use-package scheme
-  :custom
-  (scheme-program-name *scheme-binary*))
 
 (use-package scheme
   :custom
@@ -1257,16 +1304,15 @@ when called interactively."
 (use-package sicp
   :ensure t)
 
-
 ;; GDScript support
-
 (use-package gdscript-mode
   :ensure t
+  :bind
+  (:map gdscript-mode-map
+	("C-c <" . gdscript-indent-shift-left)
+	("C-c >" . gdscript-indent-shift-right))
   :custom
-  (gdscript-use-tab-indents t)
-  ;; :hook
-  ;; (gdscript-mode . (lambda () (company-mode -1)))
-  )
+  (gdscript-use-tab-indents t))
 
 
 ;;;
@@ -1274,4 +1320,4 @@ when called interactively."
 ;;;
 
 
-(load-file *custom-file-name*)
+(load-file custom-file)

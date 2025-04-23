@@ -21,11 +21,11 @@
 
 
 ;; Face families meant to replace the placeholder fonts specified in faces.el
-(defvar *face-fixed-pitch-family* "Menlo")
+(defvar *face-fixed-pitch-family* "Monaco")
 
 (defvar *face-fixed-pitch-serif-family* "PT Mono")
 
-(defvar *face-variable-pitch-family* "AppleGothic")
+(defvar *face-variable-pitch-family* "Futura")
 
 ;; Binaries and paths
 (defvar *shell-binary* (getenv "SHELL") ; using the default for the current user
@@ -41,10 +41,10 @@
   '("/opt/local/bin/typescript-language-server" "--stdio")
   "Path to the chosen JS/TS Language Server executable.")
 
-(defvar *gdb-binary* "/opt/local/bin//ggdb"
+(defvar *gdb-binary* "lldb"
   "Path to gdb executable.")
 
-(defvar *c/c++-lsp-server-binary* "/opt/local/bin/ccls-clang-10"
+(defvar *c/c++-lsp-server-binary* "/opt/local/bin/clangd-mp-17"
   "Path to the chose C/C++ etc. LSP server executable.")
 
 (defvar *lisp-binary* "sbcl"
@@ -92,6 +92,8 @@
 
 (defvar *additional-auto-modes*
   '(("\\.godot\\'" . conf-windows-mode)
+    ("[Mm]akefile\\'" . makefile-gmake-mode)
+    ("\\.clang-format\\'" . yaml-ts-mode)
     ("\\.aws/credentials\\'" . conf-mode)
     ("\\.pgpass\\'" . conf-mode)
     ("\\.sbclrc\\'" . lisp-mode)))
@@ -264,7 +266,7 @@ MExclude files with regexp: ")
   (if-let ((proj (project-current)))
       (let ((default-directory (project-root proj))
 	    (grep-format
-	     "grep --extended-regexp --color=auto --null -nHIr %s %s %s -e \"%s\"")
+	     "grep --extended-regexp --color=auto --null -nHIr %s %s %s -e \"%s\" .")
 	    (case-insensitive-option (if case-insensitive "-i" ""))
 	    (exclude-dir-options
 	     (seq-reduce (lambda (x y) (format "%s --exclude-dir=\"%s\"" x y)) exclude-dirs ""))
@@ -285,7 +287,6 @@ MExclude files with regexp: ")
   (kill-buffer (window-buffer (other-window-for-scrolling))))
 
 (defalias 'kill-buffer-other-window #'lm/kill-buffer-other-window)
-
 
 (defun lm/kill-buffer-other-window (&optional count)
   (interactive)
@@ -601,7 +602,7 @@ MExclude files with regexp: ")
 ;; Doc View configuration
 (use-package doc-view
   :custom
-  (doc-view-resolution 300) ; increase the DPI count (the default is too conservative)
+  (doc-view-resolution 300) ; increase the DPI count (the default, 100, is too conservative)
   (doc-view-continuous t
     "Change page when scrolling beyond the top/bottom"))
 
@@ -920,7 +921,9 @@ MExclude files with regexp: ")
     (customize-set-variable
      'major-mode-remap-alist
      (append major-mode-remap-alist
-	     '((c-or-c++-mode . c-or-c++-ts-mode)
+	     '((c-mode . c-ts-mode)
+	       (c++-mode . c++-ts-mode)
+	       (c-or-c++-mode . c-or-c++-ts-mode)
 	       (css-mode . css-ts-mode)
 	       (gdscript-mode . gdscript-ts-mode)
 	       (python-mode . python-ts-mode)
@@ -1233,6 +1236,22 @@ when called interactively."
   (:map c-mode-map ("<f5>" . compile)
    :map c++-mode-map ("<f5>" . compile)))
 
+
+(defun lm/untabified-indent ()
+  (indent-tabs-mode -1))
+
+(use-package c-ts-mode
+  :hook
+  (c-ts-mode . lm/untabified-indent)
+  (c++-ts-mode . lm/untabified-indent)
+  (c-or-c++-ts-mode . lm/untabified-indent)
+  :custom
+  (c-ts-mode-indent-offset 4)
+  (c-ts-mode-indent-style 'bsd)
+  :bind
+  (:map c-ts-mode-map ("<f5>" . compile)
+	:map c++-ts-mode-map ("<f5>" . compile)))
+
 (use-package make-mode
   :bind
    (:map makefile-mode-map ("<f5>" . compile)))
@@ -1249,7 +1268,8 @@ when called interactively."
   (add-to-list 'company-backends #'company-c-headers)
   (dolist (path '("~/.local/include"
 		  "/opt/local/include"
-		  "/user/local/include"))
+		  "/user/local/include"
+		  "/Library/Developer/CommandLineTools/usr/include/c++/v1/"))
     (add-to-list 'company-c-headers-path-system (expand-file-name path))))
 
 ;; ccls: C/C++ backend for LSP

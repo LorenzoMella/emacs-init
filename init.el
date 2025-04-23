@@ -38,13 +38,13 @@
   "Path to the chosen Python LSP Server executable.")
 
 (defvar *typescript-language-server-binary*
-  '("~/npm/bin/typescript-language-server" "--stdio")
+  '("~/.local/bin/typescript-language-server" "--stdio")
   "Path to the chosen JS/TS Language Server executable.")
 
-(defvar *gdb-binary* "/usr/bin/gdb"
+(defvar *gdb-binary* "gdb"
   "Path to gdb executable.")
 
-(defvar *c/c++-lsp-server-binary* "/usr/bin/ccls"
+(defvar *c/c++-lsp-server-binary* "ccls"
   "Path to the chose C/C++ etc. LSP server executable.")
 
 (defvar *lisp-binary* "sbcl"
@@ -87,11 +87,13 @@
 (defvar *texlive-bin-path* "/usr/bin"
   "Path to the TeXlive binaries.")
 
-(defvar *additional-bin-paths* '("~/.local/bin" "/usr/local/bin")
+(defvar *additional-bin-paths* '("~/.local/bin" "/opt/local/bin" "/usr/local/bin")
   "List of paths to additional binaries.")
 
 (defvar *additional-auto-modes*
   '(("\\.godot\\'" . conf-windows-mode)
+    ("[Mm]akefile\\'" . makefile-gmake-mode)
+    ("\\.clang-format\\'" . yaml-ts-mode)
     ("\\.aws/credentials\\'" . conf-mode)
     ("\\.pgpass\\'" . conf-mode)
     ("\\.sbclrc\\'" . lisp-mode)))
@@ -108,7 +110,7 @@
      (sql-port 5432)))
   "Database user/role configuration.")
 
-(defvar *ein-image-viewer* "open"
+(defvar *ein-image-viewer* "/usr/bin/open -a Preview"
   "Image viewing program used by the EIN package (with options).")
 
 ;; Other settings
@@ -119,13 +121,13 @@
   "`customize' will save its settings in this file.
 Set it to nil to append to this file.")
 
-(defvar *transparency-alpha* '(97 97)
+(defvar *transparency-alpha* 98
   "Frame transparency alpha parameter.")
 
 (defvar *global-line-spacing* 0.2
   "Distance between consecutive lines in pixels or fraction of line height.")
 
-(defvar *preferred-browser* #'browse-url-default-macosx-browser
+(defvar *preferred-browser* #'browse-url-default-browser
   "Any one of the browser symbols defined by the `browse-url' package.")
 
 (defvar *latex-preview-scaling-in-org* 2.0
@@ -264,7 +266,7 @@ MExclude files with regexp: ")
   (if-let ((proj (project-current)))
       (let ((default-directory (project-root proj))
 	    (grep-format
-	     "grep --extended-regexp --color=auto --null -nHIr %s %s %s -e \"%s\"")
+	     "grep --extended-regexp --color=auto --null -nHIr %s %s %s -e \"%s\" .")
 	    (case-insensitive-option (if case-insensitive "-i" ""))
 	    (exclude-dir-options
 	     (seq-reduce (lambda (x y) (format "%s --exclude-dir=\"%s\"" x y)) exclude-dirs ""))
@@ -285,6 +287,13 @@ MExclude files with regexp: ")
   (kill-buffer (window-buffer (other-window-for-scrolling))))
 
 (defalias 'kill-buffer-other-window #'lm/kill-buffer-other-window)
+
+(defun lm/kill-buffer-other-window (&optional count)
+  (interactive)
+  (unless count
+    (setq count 1))
+  (save-excursion
+    (kill-buffer (window-buffer (next-window nil -1)))))
 
 
 ;;;
@@ -501,8 +510,8 @@ MExclude files with regexp: ")
     "nil on MacOS to avoid a warning")
   (dired-listing-switches
    (if (eq system-type 'gnu/linux)
-       "-lahFb --group-directories-first"
-     "-lahFb")
+       "-lahF --group-directories-first"
+     "-lahF")
     "ls -l readability adjustments. Group directories first when using coreutils ls")
   (dired-ls-F-marks-symlinks (eq system-type 'darwin)
     "Rename symlinks correctly, when marked with '@' by ls -lF")
@@ -593,7 +602,7 @@ MExclude files with regexp: ")
 ;; Doc View configuration
 (use-package doc-view
   :custom
-  (doc-view-resolution 300) ; increase the DPI count (the default is too conservative)
+  (doc-view-resolution 300) ; increase the DPI count (the default, 100, is too conservative)
   (doc-view-continuous t
     "Change page when scrolling beyond the top/bottom"))
 
@@ -782,14 +791,16 @@ MExclude files with regexp: ")
   (dashboard-startup-banner *dashboard-logo*)
   (dashboard-banner-logo-title (format "GNU Emacs %s" emacs-version))
   (dashboard-items '((recents . 10) (bookmarks . 10) (agenda . 10)))
-  (dashboard-footer-messages '(nil))
   :config
   (with-eval-after-load 'dashboard-widgets
     ;; Hooks effective after resizing the frame
     (add-hook 'dashboard-after-initialize-hook #'hl-line-mode)
     (add-hook 'dashboard-after-initialize-hook #'dashboard-jump-to-recents)
     (add-hook 'dashboard-mode-hook #'hl-line-mode)
-    (add-hook 'dashboard-mode-hook #'dashboard-jump-to-recents))
+    (add-hook 'dashboard-mode-hook #'dashboard-jump-to-recents)
+    (if (boundp 'dashboard-footer-messages)
+	(customize-set-variable 'dashboard-footer-messages '(nil))
+      (dashboard-set-footer nil)))
   :bind
   (:map dashboard-mode-map
    ("n" . dashboard-next-line)
@@ -910,7 +921,9 @@ MExclude files with regexp: ")
     (customize-set-variable
      'major-mode-remap-alist
      (append major-mode-remap-alist
-	     '((c-or-c++-mode . c-or-c++-ts-mode)
+	     '((c-mode . c-ts-mode)
+	       (c++-mode . c++-ts-mode)
+	       (c-or-c++-mode . c-or-c++-ts-mode)
 	       (css-mode . css-ts-mode)
 	       (gdscript-mode . gdscript-ts-mode)
 	       (python-mode . python-ts-mode)
@@ -1024,6 +1037,7 @@ MExclude files with regexp: ")
   (:map eglot-mode-map
     ("S-<f6>" . eglot-rename))
   :hook
+  ((gdscript-mode gdscript-ts-mode) . eglot-ensure)
   ((c-mode c-ts-mode c++-mode c++-ts-mode) . eglot-ensure)
   ((gdscript-mode gdscript-ts-mode) . eglot-ensure)
   ((js-mode js-ts-mode js2-mode) . eglot-ensure)
@@ -1222,6 +1236,22 @@ when called interactively."
   (:map c-mode-map ("<f5>" . compile)
    :map c++-mode-map ("<f5>" . compile)))
 
+
+(defun lm/untabified-indent ()
+  (indent-tabs-mode -1))
+
+(use-package c-ts-mode
+  :hook
+  (c-ts-mode . lm/untabified-indent)
+  (c++-ts-mode . lm/untabified-indent)
+  (c-or-c++-ts-mode . lm/untabified-indent)
+  :custom
+  (c-ts-mode-indent-offset 4)
+  (c-ts-mode-indent-style 'bsd)
+  :bind
+  (:map c-ts-mode-map ("<f5>" . compile)
+	:map c++-ts-mode-map ("<f5>" . compile)))
+
 (use-package make-mode
   :bind
    (:map makefile-mode-map ("<f5>" . compile)))
@@ -1235,7 +1265,13 @@ when called interactively."
   :ensure t
   :after company
   :config
-  (add-to-list 'company-backends #'company-c-headers))
+  (add-to-list 'company-backends #'company-c-headers)
+  ;; Ad-hoc config (should cover most cases)
+  (dolist (path '("~/.local/include"
+		  "/opt/local/include"
+		  "/usr/local/include"
+		  "/Library/Developer/CommandLineTools/usr/include/c++/v1/"))
+    (add-to-list 'company-c-headers-path-system (expand-file-name path))))
 
 ;; ccls: C/C++ backend for LSP
 (use-package ccls
@@ -1247,16 +1283,6 @@ when called interactively."
 (use-package gdb-mi
   :custom
   (gud-gdb-command-name *gdb-binary*))
-
-;; GDScript support
-(use-package gdscript-mode
-  :ensure t
-  :bind
-  (:map gdscript-mode-map
-	("C-c <" . gdscript-indent-shift-left)
-	("C-c >" . gdscript-indent-shift-right))
-  :custom
-  (gdscript-use-tab-indents t))
 
 ;; Common Lisp support
 
@@ -1298,6 +1324,16 @@ when called interactively."
 ;;   https://mitpress.mit.edu/sites/default/files/sicp/index.html
 (use-package sicp
   :ensure t)
+
+;; GDScript support
+(use-package gdscript-mode
+  :ensure t
+  :bind
+  (:map gdscript-mode-map
+	("C-c <" . gdscript-indent-shift-left)
+	("C-c >" . gdscript-indent-shift-right))
+  :custom
+  (gdscript-use-tab-indents t))
 
 
 ;;;

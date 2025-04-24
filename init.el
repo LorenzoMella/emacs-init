@@ -21,11 +21,11 @@
 
 
 ;; Face families meant to replace the placeholder fonts specified in faces.el
-(defvar *face-fixed-pitch-family* "Monospace")
+(defvar *face-fixed-pitch-family* "Adwaita Mono")
 
-(defvar *face-fixed-pitch-serif-family* "Serif")
+(defvar *face-fixed-pitch-serif-family* "Nimbus Mono")
 
-(defvar *face-variable-pitch-family* "Sans Serif")
+(defvar *face-variable-pitch-family* "Adwaita Sans")
 
 ;; Binaries and paths
 (defvar *shell-binary* (getenv "SHELL") ; using the default for the current user
@@ -56,10 +56,11 @@
 (defvar *additional-man-paths*
   '("/usr/local/share/man" "/opt/local/share/man"))
 
-(defvar *additional-texinfo-paths* '("/usr/local/share/info" "/opt/local/share/info")
+(defvar *additional-texinfo-paths*
+  '("/usr/local/share/info" "/opt/local/share/info")
   "List of the nonstandard texinfo paths.")
 
-(defvar *additional-python-source-paths* '("~/.local/lib/local-packages/")
+(defvar *additional-python-source-paths* '("~/projects/local-packages")
   "Paths to be added to `python-shell-extra-pythonpaths'")
 
 (defvar *python-virtual-environment-home-path* "~/.virtualenvs"
@@ -68,7 +69,6 @@
 (defvar *tree-sitter-language-sources*
   ;; entries are of the form (LANG . (URL REVISION SOURCE-DIR CC C++)), with the
   ;; cdr (CC C++) optional
-  ;; TODO Add json
   '((bash "https://github.com/tree-sitter/tree-sitter-bash.git" "master" "src")
     (c "https://github.com/tree-sitter/tree-sitter-c.git" "master" "src")
     (cpp "https://github.com/tree-sitter/tree-sitter-cpp.git" "master" "src")
@@ -77,7 +77,7 @@
     (html "https://github.com/tree-sitter/tree-sitter-html.git" "master" "src")
     (css "https://github.com/tree-sitter/tree-sitter-css.git" "master" "src")
     (javascript "https://github.com/tree-sitter/tree-sitter-javascript.git" "master" "src")
-    (json "https://github.com/tree-sitter/tree-sitter-json.git")
+    (json "https://github.com/tree-sitter/tree-sitter-json.git" "master" "src")
     (python "https://github.com/tree-sitter/tree-sitter-python.git" "master" "src"))
   "Grammar retrieval information to populate `treesit-language-source-alist'.")
 
@@ -119,20 +119,20 @@
   "`customize' will save its settings in this file.
 Set it to nil to append to this file.")
 
-(defvar *transparency-alpha* '(97 97)
+(defvar *transparency-alpha* 98
   "Frame transparency alpha parameter.")
 
 (defvar *global-line-spacing* 0.2
   "Distance between consecutive lines in pixels or fraction of line height.")
 
-(defvar *preferred-browser* #'browse-url-default-macosx-browser
+(defvar *preferred-browser* #'browse-url-default-browser
   "Any one of the browser symbols defined by the `browse-url' package.")
 
 (defvar *latex-preview-scaling-in-org* 2.0
   "Scaling of Latex image previews in Org Mode.")
 
 (defvar *initial-scratch-message*
-  (expand-file-name "initial-scratch-message.txt" user-emacs-directory)
+  "initial-scratch-message.txt"
   "Path to text file including a custom *scratch* buffer message.")
 
 (defvar *dashboard-logo* 'logo)
@@ -501,8 +501,8 @@ MExclude files with regexp: ")
     "nil on MacOS to avoid a warning")
   (dired-listing-switches
    (if (eq system-type 'gnu/linux)
-       "-lahFb --group-directories-first"
-     "-lahFb")
+       "-lahF --group-directories-first"
+     "-lahF")
     "ls -l readability adjustments. Group directories first when using coreutils ls")
   (dired-ls-F-marks-symlinks (eq system-type 'darwin)
     "Rename symlinks correctly, when marked with '@' by ls -lF")
@@ -626,12 +626,13 @@ MExclude files with regexp: ")
 (customize-set-variable 'frame-resize-pixelwise t)
 
 ;; Optionally transparent frame
-(customize-set-variable
- 'default-frame-alist
- (add-to-list 'default-frame-alist (cons 'alpha *transparency-alpha*)))
+(lm/adjust-transparency *transparency-alpha*)
 
 ;; Replace the default scratch message
-(customize-set-variable 'initial-scratch-message (lm/string-from-file *initial-scratch-message*))
+(customize-set-variable
+ 'initial-scratch-message
+ (lm/string-from-file
+  (expand-file-name *initial-scratch-message* user-emacs-directory)))
 
 ;; Convert non-visible ^L (form feed) into a horizontal line
 (use-package page-break-lines

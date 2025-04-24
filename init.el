@@ -910,7 +910,9 @@ MExclude files with regexp: ")
     (customize-set-variable
      'major-mode-remap-alist
      (append major-mode-remap-alist
-	     '((c-or-c++-mode . c-or-c++-ts-mode)
+	     '((c-mode . c-ts-mode)
+	       (c++-mode . c++-ts-mode)
+	       (c-or-c++-mode . c-or-c++-ts-mode)
 	       (css-mode . css-ts-mode)
 	       (gdscript-mode . gdscript-ts-mode)
 	       (python-mode . python-ts-mode)
@@ -1219,16 +1221,44 @@ when called interactively."
 
 (use-package cc-mode
   :bind
-  (:map c-mode-map ("<f5>" . compile)
-   :map c++-mode-map ("<f5>" . compile)))
+  (:map c-mode-map
+	("<f7>" . compile)
+	("<f5>" . gud-gdb)
+  :map c++-mode-map
+	("<f7>" . compile)
+	("<f5>" . gud-gdb))
+  :hook
+  ((c-mode c++-mode) . (lambda () (c-set-style "custom")))
+  :config
+  ;; "custom" is identical to "stroustrup" for now, but it can be customized
+  (c-add-style "custom" '("stroustrup" (c-basic-offset . 4))))
+
+;; Unlike for other languages (Python), c-ts-mode and c++-ts-mode are their own package
+(use-package c-ts-mode
+  :custom
+  (c-ts-mode-indent-style 'bsd)
+  (c-ts-mode-indent-offset 4)
+  :bind
+  (:map c-ts-mode-map
+	("<f7>" . compile)
+	("<f5>" . gud-gdb)
+  :map c++-ts-mode-map
+	("<f7>" . compile)
+	("<f5>" . gud-gdb)))
+
+;; Compiler toolchain and debugger configuration
 
 (use-package make-mode
   :bind
-   (:map makefile-mode-map ("<f5>" . compile)))
+   (:map makefile-mode-map ("<f7>" . compile)))
 
 (use-package compile
   :custom
   (compile-command "make -kj "))
+
+(use-package gdb-mi
+  :custom
+  (gud-gdb-command-name (format "%s -i=mi" *gdb-binary*)))
 
 ;; Company backend for C/C++ headers
 (use-package company-c-headers
@@ -1242,11 +1272,6 @@ when called interactively."
   :ensure t
   :custom
   (ccls-executable *c/c++-lsp-server-binary*))
-
-;; Native debugger interface (`gud')
-(use-package gdb-mi
-  :custom
-  (gud-gdb-command-name *gdb-binary*))
 
 ;; GDScript support
 (use-package gdscript-mode

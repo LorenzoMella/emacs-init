@@ -41,10 +41,10 @@
   '("~/npm/bin/typescript-language-server" "--stdio")
   "Path to the chosen JS/TS Language Server executable.")
 
-(defvar *gdb-binary* "/usr/bin/gdb"
+(defvar *gdb-binary* "gdb"
   "Path to gdb executable.")
 
-(defvar *c/c++-lsp-server-binary* "/usr/bin/ccls"
+(defvar *c/c++-lsp-server-binary* "clangd"
   "Path to the chose C/C++ etc. LSP server executable.")
 
 (defvar *lisp-binary* "sbcl"
@@ -92,6 +92,8 @@
 
 (defvar *additional-auto-modes*
   '(("\\.godot\\'" . conf-windows-mode)
+    ("[Mm]akefile\\'" . makefile-gmake-mode)
+    ("\\.clang-format\\'" . conf-colon-mode)
     ("\\.aws/credentials\\'" . conf-mode)
     ("\\.pgpass\\'" . conf-mode)
     ("\\.sbclrc\\'" . lisp-mode)))
@@ -453,7 +455,10 @@ MExclude files with regexp: ")
       (side . bottom)
       (slot . 0)
       (dedicated . t)
-      (window-parameters . ((no-other-window . t)))))))
+      (window-parameters . ((no-other-window . t))))
+     ("\\*gud-.*\\*"
+      display-buffer-pop-up-window
+      (direction . right)))))
 
 ;; Whitespace
 (use-package whitespace
@@ -1235,10 +1240,18 @@ when called interactively."
   (c-add-style "custom" '("stroustrup" (c-basic-offset . 4))))
 
 ;; Unlike for other languages (Python), c-ts-mode and c++-ts-mode are their own package
+
+(defun lm/untabified-indent ()
+  (indent-tabs-mode -1))
+
 (use-package c-ts-mode
+  :hook
+  (c-ts-mode . lm/untabified-indent)
+  (c++-ts-mode . lm/untabified-indent)
+  (c-or-c++-ts-mode . lm/untabified-indent)
   :custom
-  (c-ts-mode-indent-style 'bsd)
   (c-ts-mode-indent-offset 4)
+  (c-ts-mode-indent-style 'bsd)
   :bind
   (:map c-ts-mode-map
 	("<f7>" . compile)
@@ -1266,10 +1279,17 @@ when called interactively."
   :ensure t
   :after company
   :config
-  (add-to-list 'company-backends #'company-c-headers))
+  (add-to-list 'company-backends #'company-c-headers)
+  ;; Ad-hoc config (should cover most cases)
+  (dolist (path '("~/.local/include"
+		  "/opt/local/include"
+		  "/usr/local/include"
+		  "/Library/Developer/CommandLineTools/usr/include/c++/v1/"))
+    (add-to-list 'company-c-headers-path-system (expand-file-name path))))
 
 ;; ccls: C/C++ backend for LSP
-(use-package ccls
+;; (unquote if *c/c++-lsp-server-binary* is set to ccls)
+'(use-package ccls
   :ensure t
   :custom
   (ccls-executable *c/c++-lsp-server-binary*))

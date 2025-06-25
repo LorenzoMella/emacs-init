@@ -38,7 +38,7 @@
   "Path to the chosen Python LSP Server executable.")
 
 (defvar *typescript-language-server-binary*
-  '("~/npm/bin/typescript-language-server" "--stdio")
+  '("~/.local/bin/typescript-language-server" "--stdio")
   "Path to the chosen JS/TS Language Server executable.")
 
 (defvar *gdb-binary* "gdb"
@@ -87,7 +87,7 @@
 (defvar *texlive-bin-path* "/usr/bin"
   "Path to the TeXlive binaries.")
 
-(defvar *additional-bin-paths* '("~/.local/bin" "/usr/local/bin")
+(defvar *additional-bin-paths* '("~/.local/bin" "/opt/local/bin" "/usr/local/bin")
   "List of paths to additional binaries.")
 
 (defvar *additional-auto-modes*
@@ -110,14 +110,14 @@
      (sql-port 5432)))
   "Database user/role configuration.")
 
-(defvar *ein-image-viewer* "open"
+(defvar *ein-image-viewer* "/usr/bin/open -a Preview"
   "Image viewing program used by the EIN package (with options).")
 
 ;; Other settings
 (defvar *gc-bytes* (* 50 1024 1024) ; 50MB
   "Preferred heap threshold size to start garbage collection.")
 
-(defvar *custom-file-name* "custom-file.el"
+(defvar *custom-file-name* (expand-file-name "custom-file.el" user-emacs-directory)
   "`customize' will save its settings in this file.
 Set it to nil to append to this file.")
 
@@ -266,7 +266,7 @@ MExclude files with regexp: ")
   (if-let ((proj (project-current)))
       (let ((default-directory (project-root proj))
 	    (grep-format
-	     "grep --extended-regexp --color=auto --null -nHIr %s %s %s -e \"%s\"")
+	     "grep --extended-regexp --color=auto --null -nHIr %s %s %s -e \"%s\" .")
 	    (case-insensitive-option (if case-insensitive "-i" ""))
 	    (exclude-dir-options
 	     (seq-reduce (lambda (x y) (format "%s --exclude-dir=\"%s\"" x y)) exclude-dirs ""))
@@ -287,6 +287,13 @@ MExclude files with regexp: ")
   (kill-buffer (window-buffer (other-window-for-scrolling))))
 
 (defalias 'kill-buffer-other-window #'lm/kill-buffer-other-window)
+
+(defun lm/kill-buffer-other-window (&optional count)
+  (interactive)
+  (unless count
+    (setq count 1))
+  (save-excursion
+    (kill-buffer (window-buffer (next-window nil -1)))))
 
 
 ;;;
@@ -598,7 +605,7 @@ MExclude files with regexp: ")
 ;; Doc View configuration
 (use-package doc-view
   :custom
-  (doc-view-resolution 300) ; increase the DPI count (the default is too conservative)
+  (doc-view-resolution 300) ; increase the DPI count (the default, 100, is too conservative)
   (doc-view-continuous t
     "Change page when scrolling beyond the top/bottom"))
 
@@ -788,14 +795,16 @@ MExclude files with regexp: ")
   (dashboard-startup-banner *dashboard-logo*)
   (dashboard-banner-logo-title (format "GNU Emacs %s" emacs-version))
   (dashboard-items '((recents . 10) (bookmarks . 10) (agenda . 10)))
-  (dashboard-footer-messages '(nil))
   :config
   (with-eval-after-load 'dashboard-widgets
     ;; Hooks effective after resizing the frame
     (add-hook 'dashboard-after-initialize-hook #'hl-line-mode)
     (add-hook 'dashboard-after-initialize-hook #'dashboard-jump-to-recents)
     (add-hook 'dashboard-mode-hook #'hl-line-mode)
-    (add-hook 'dashboard-mode-hook #'dashboard-jump-to-recents))
+    (add-hook 'dashboard-mode-hook #'dashboard-jump-to-recents)
+    (if (boundp 'dashboard-footer-messages)
+	(customize-set-variable 'dashboard-footer-messages '(nil))
+      (dashboard-set-footer nil)))
   :bind
   (:map dashboard-mode-map
    ("n" . dashboard-next-line)
@@ -1032,6 +1041,7 @@ MExclude files with regexp: ")
   (:map eglot-mode-map
     ("S-<f6>" . eglot-rename))
   :hook
+  ((gdscript-mode gdscript-ts-mode) . eglot-ensure)
   ((c-mode c-ts-mode c++-mode c++-ts-mode) . eglot-ensure)
   ((gdscript-mode gdscript-ts-mode) . eglot-ensure)
   ((js-mode js-ts-mode js2-mode) . eglot-ensure)
@@ -1294,16 +1304,6 @@ when called interactively."
   :custom
   (ccls-executable *c/c++-lsp-server-binary*))
 
-;; GDScript support
-(use-package gdscript-mode
-  :ensure t
-  :bind
-  (:map gdscript-mode-map
-	("C-c <" . gdscript-indent-shift-left)
-	("C-c >" . gdscript-indent-shift-right))
-  :custom
-  (gdscript-use-tab-indents t))
-
 ;; Common Lisp support
 
 (use-package slime
@@ -1344,6 +1344,16 @@ when called interactively."
 ;;   https://mitpress.mit.edu/sites/default/files/sicp/index.html
 (use-package sicp
   :ensure t)
+
+;; GDScript support
+(use-package gdscript-mode
+  :ensure t
+  :bind
+  (:map gdscript-mode-map
+	("C-c <" . gdscript-indent-shift-left)
+	("C-c >" . gdscript-indent-shift-right))
+  :custom
+  (gdscript-use-tab-indents t))
 
 
 ;;;

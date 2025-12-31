@@ -119,6 +119,9 @@
 (defvar *ein-image-viewer* "/usr/bin/open -a Preview"
   "Image viewing program used by the EIN package (with options).")
 
+(defvar *godot-app-path* "/usr/bin/redot"
+  "Path to the Godot or Godot fork executable.")
+
 ;; Other settings
 (defvar *gc-bytes* (* 50 1024 1024) ; 50MB
   "Preferred heap threshold size to start garbage collection.")
@@ -140,7 +143,7 @@ Set it to nil to append to this file.")
   "Scaling of Latex image previews in Org Mode.")
 
 (defvar *initial-scratch-message*
-  "initial-scratch-message.txt"
+  (expand-file-name "initial-scratch-message.txt" user-emacs-directory)
   "Path to text file including a custom *scratch* buffer message.")
 
 (defvar *dashboard-logo* 'logo)
@@ -386,6 +389,7 @@ MExclude files with regexp: ")
   (bind-key "s-u" #'revert-buffer))
 
 ;; Remap the insert-char shortcuts
+(unbind-key "s-8")
 (bind-key "s-8" 'iso-transl-ctl-x-8-map key-translation-map)
 
 ;; Window-resizing keybindings
@@ -473,8 +477,9 @@ MExclude files with regexp: ")
       (dedicated . t)
       (window-parameters . ((no-other-window . t))))
      ("\\*gud-.*\\*"
-      display-buffer-pop-up-window
-      (direction . right)))))
+      (display-buffer-reuse-window
+       display-buffer-use-some-window)
+      ((dedicated . t))))))
 
 ;; Whitespace
 (use-package whitespace
@@ -553,8 +558,7 @@ MExclude files with regexp: ")
   ;; default. Since the hidden indent characters appear on virtually every line,
   ;; they may give the impression of an increase in `line-spacing', which is
   ;; however left untouched.
-  (org-indent
-   ((t (:inherit org-hide))))
+  (org-indent ((t (:inherit org-hide))))
   :hook
   (org-mode . visual-line-mode)
   (org-agenda-mode . hl-line-mode)
@@ -647,13 +651,14 @@ MExclude files with regexp: ")
 (customize-set-variable 'frame-resize-pixelwise t)
 
 ;; Optionally transparent frame
-(lm/adjust-transparency *transparency-alpha*)
+(customize-set-variable
+ 'default-frame-alist
+ (add-to-list 'default-frame-alist (cons 'alpha *transparency-alpha*)))
 
 ;; Replace the default scratch message
-(customize-set-variable
- 'initial-scratch-message
- (lm/string-from-file
-  (expand-file-name *initial-scratch-message* user-emacs-directory)))
+(when (file-exists-p *initial-scratch-message*)
+  (customize-set-variable 'initial-scratch-message
+			  (lm/string-from-file *initial-scratch-message*)))
 
 ;; Convert non-visible ^L (form feed) into a horizontal line
 (use-package page-break-lines
@@ -990,10 +995,10 @@ MExclude files with regexp: ")
   :ensure yasnippet
   :bind
   (:map company-active-map
-   ("M-n" . nil)
-   ("M-p" . nil)
-   ("C-n" . company-select-next-or-abort)
-   ("C-p" . company-select-previous-or-abort))
+	("M-n" . nil)
+	("M-p" . nil)
+	("C-n" . company-select-next-or-abort)
+	("C-p" . company-select-previous-or-abort))
   :custom
   (company-selection-wrap-around t)
   (company-idle-delay 0.0)
@@ -1087,12 +1092,6 @@ MExclude files with regexp: ")
 
 ;; ESS - Emacs Speaks Statistics: R and R Markdown suite
 
-(defun insert-pipe ()
-  "Insert the pipe (%>%) operator at point, as defined by the magrittr
-package."
-  (interactive)
-  (insert "%>% "))
-
 ;; Automate the pdf rendering of R Markdown projects
 (defun rmarkdown-render (filename)
   "Run rmarkdown::render on the chosen file.
@@ -1106,6 +1105,12 @@ must be installed at a minimum."
 
 (use-package ess
   :ensure t
+  :preface
+  (defun insert-pipe ()
+    "Insert the pipe (%>%) operator at point, as defined by the magrittr
+package."
+    (interactive)
+    (insert "%>% "))
   :custom
   (ess-use-ido nil)
   (ess-style 'RStudio)
@@ -1280,7 +1285,7 @@ when called interactively."
   (:map c-ts-mode-map
 	("<f7>" . compile)
 	("<f5>" . gud-gdb)
-  :map c++-ts-mode-map
+   :map c++-ts-mode-map
 	("<f7>" . compile)
 	("<f5>" . gud-gdb)))
 
@@ -1367,7 +1372,9 @@ when called interactively."
 	("C-c <" . gdscript-indent-shift-left)
 	("C-c >" . gdscript-indent-shift-right))
   :custom
-  (gdscript-use-tab-indents t))
+  (gdscript-use-tab-indents t)
+  (gdscript-godot-executable
+   (expand-file-name *godot-app-path*)))
 
 
 ;;;

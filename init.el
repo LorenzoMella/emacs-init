@@ -78,7 +78,9 @@
     (css "https://github.com/tree-sitter/tree-sitter-css.git" "master" "src")
     (javascript "https://github.com/tree-sitter/tree-sitter-javascript.git" "master" "src")
     (json "https://github.com/tree-sitter/tree-sitter-json.git" "master" "src")
-    (python "https://github.com/tree-sitter/tree-sitter-python.git" "master" "src"))
+    (lua "https://github.com/tree-sitter-grammars/tree-sitter-lua.git" "main" "src")
+    (python "https://github.com/tree-sitter/tree-sitter-python.git" "master" "src")
+    (yaml "https://github.com/tree-sitter-grammars/tree-sitter-yaml.git" "master" "src"))
   "Grammar retrieval information to populate `treesit-language-source-alist'.")
 
 (defvar *org-babel-active-languages* '(jupyter lisp python R shell sql)
@@ -93,7 +95,11 @@
 (defvar *additional-auto-modes*
   '(("\\.godot\\'" . conf-windows-mode)
     ("[Mm]akefile\\'" . makefile-gmake-mode)
-    ("\\.clang-format\\'" . conf-colon-mode)
+    ("CMakeLists\\.txt\\'" . cmake-ts-mode)
+    ("\\.cmake\\'" . cmake-ts-mode)
+    ("\\.clang-format\\'" . yaml-ts-mode)
+    ("\\.inl\\'" . c-or-c++-mode)
+    ("\\.lua\\'" . lua-ts-mode)
     ("\\.aws/credentials\\'" . conf-mode)
     ("\\.pgpass\\'" . conf-mode)
     ("\\.sbclrc\\'" . lisp-mode)))

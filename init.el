@@ -1126,7 +1126,14 @@ package."
   :ensure t
   :after ess)
 
-;; JavaScript configuration
+;; Web dev configuration
+
+(use-package mhtml-mode
+  :config
+  ;; Remove useless `facemenu-keymap' binding, clashing with our custom
+  ;; `other-window' binding
+  (unbind-key "M-o" html-mode-map)
+  (unbind-key "M-o" mhtml-mode-map))
 
 (use-package js-comint
   :ensure t)

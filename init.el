@@ -1000,7 +1000,12 @@ MExclude files with regexp: ")
   (company-minimum-prefix-length 1)
   :hook
   (prog-mode . company-mode)
-  (prog-mode . yas-minor-mode))
+  (prog-mode . yas-minor-mode)
+  :config
+  ;; conflicts with eglot+clangd
+  (customize-set-variable 'company-backends
+			  (remq 'company-clang company-backends)))
+
 
 ;; Eldoc configuration
 (use-package eldoc

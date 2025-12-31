@@ -353,10 +353,13 @@ MExclude files with regexp: ")
 
 ;; Initial frame fix under Gnome
 (when (and (memq (window-system) '(x pgtk))
-	   (string= (getenv "DESKTOP_SESSION") "gnome"))
+	   (string-match-p "gnome" (getenv "DESKTOP_SESSION")))
   (customize-set-variable 'initial-frame-alist
-			  '((width . 90) (height . 45)))
-  (set-frame-size nil 90 45))
+			  '((width . 90) (height . 35)))
+  (set-frame-size nil 90 35)
+  (customize-set-variable 'default-frame-alist
+			  '((width . 90) (height . 35)))
+  (set-frame-size nil 90 35))
 
 ;; General keybindings
 

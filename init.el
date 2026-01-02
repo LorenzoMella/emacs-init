@@ -360,9 +360,9 @@ MExclude files with regexp: ")
 ;;;
 
 
-;; Initial frame fix under Gnome
+;; Frame size fix under Gnome (prevents occasional creation of very small frames)
 (when (and (memq (window-system) '(x pgtk))
-	   (string-match-p "gnome" (getenv "DESKTOP_SESSION")))
+	   (string-equal "GNOME" (getenv "XDG_CURRENT_DESKTOP")))
   (customize-set-variable 'initial-frame-alist
 			  '((width . 90) (height . 35)))
   (set-frame-size nil 90 35)

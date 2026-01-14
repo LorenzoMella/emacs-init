@@ -1,6 +1,6 @@
 ;;;  init.el --- Personal init configuration for general use, C/C++ programming, Python, Lisp, and R -*- lexical-binding: t; coding: utf-8 -*-
 
-;;  Copyright (C) 2021-2025 Lorenzo Mella
+;;  Copyright (C) 2021-2026 Lorenzo Mella
 
 ;;  Author: Lorenzo Mella <lorenzo.mella@yahoo.com>
 
@@ -23,7 +23,7 @@
 ;; Face families meant to replace the placeholder fonts specified in faces.el
 (defvar *face-fixed-pitch-family* "Monospace")
 
-(defvar *face-fixed-pitch-serif-family* "Serif")
+(defvar *face-fixed-pitch-serif-family* "Monospace")
 
 (defvar *face-variable-pitch-family* "Sans Serif")
 
@@ -44,7 +44,7 @@
 (defvar *gdb-binary* "gdb"
   "Path to gdb executable.")
 
-(defvar *c/c++-lsp-server-binary* "ccls"
+(defvar *c/c++-lsp-server-binary* "clangd"
   "Path to the chose C/C++ etc. LSP server executable.")
 
 (defvar *lisp-binary* "sbcl"
@@ -56,10 +56,11 @@
 (defvar *additional-man-paths*
   '("/usr/local/share/man" "/opt/local/share/man"))
 
-(defvar *additional-texinfo-paths* '("/usr/local/share/info" "/opt/local/share/info")
+(defvar *additional-texinfo-paths*
+  '("/usr/local/share/info" "/opt/local/share/info")
   "List of the nonstandard texinfo paths.")
 
-(defvar *additional-python-source-paths* '("~/.local/lib/local-packages/")
+(defvar *additional-python-source-paths* '("~/projects/local-packages")
   "Paths to be added to `python-shell-extra-pythonpaths'")
 
 (defvar *python-virtual-environment-home-path* "~/.virtualenvs"
@@ -68,7 +69,6 @@
 (defvar *tree-sitter-language-sources*
   ;; entries are of the form (LANG . (URL REVISION SOURCE-DIR CC C++)), with the
   ;; cdr (CC C++) optional
-  ;; TODO Add json
   '((bash "https://github.com/tree-sitter/tree-sitter-bash.git" "master" "src")
     (c "https://github.com/tree-sitter/tree-sitter-c.git" "master" "src")
     (cpp "https://github.com/tree-sitter/tree-sitter-cpp.git" "master" "src")
@@ -77,8 +77,10 @@
     (html "https://github.com/tree-sitter/tree-sitter-html.git" "master" "src")
     (css "https://github.com/tree-sitter/tree-sitter-css.git" "master" "src")
     (javascript "https://github.com/tree-sitter/tree-sitter-javascript.git" "master" "src")
-    (json "https://github.com/tree-sitter/tree-sitter-json.git")
-    (python "https://github.com/tree-sitter/tree-sitter-python.git" "master" "src"))
+    (json "https://github.com/tree-sitter/tree-sitter-json.git" "master" "src")
+    (lua "https://github.com/tree-sitter-grammars/tree-sitter-lua.git" "main" "src")
+    (python "https://github.com/tree-sitter/tree-sitter-python.git" "master" "src")
+    (yaml "https://github.com/tree-sitter-grammars/tree-sitter-yaml.git" "master" "src"))
   "Grammar retrieval information to populate `treesit-language-source-alist'.")
 
 (defvar *org-babel-active-languages* '(jupyter lisp python R shell sql)
@@ -93,7 +95,11 @@
 (defvar *additional-auto-modes*
   '(("\\.godot\\'" . conf-windows-mode)
     ("[Mm]akefile\\'" . makefile-gmake-mode)
+    ("CMakeLists\\.txt\\'" . cmake-ts-mode)
+    ("\\.cmake\\'" . cmake-ts-mode)
     ("\\.clang-format\\'" . yaml-ts-mode)
+    ("\\.inl\\'" . c-or-c++-mode)
+    ("\\.lua\\'" . lua-ts-mode)
     ("\\.aws/credentials\\'" . conf-mode)
     ("\\.pgpass\\'" . conf-mode)
     ("\\.sbclrc\\'" . lisp-mode)))
@@ -113,11 +119,14 @@
 (defvar *ein-image-viewer* "/usr/bin/open -a Preview"
   "Image viewing program used by the EIN package (with options).")
 
+(defvar *godot-app-path* "/usr/bin/redot"
+  "Path to the Godot or Godot fork executable.")
+
 ;; Other settings
 (defvar *gc-bytes* (* 50 1024 1024) ; 50MB
   "Preferred heap threshold size to start garbage collection.")
 
-(defvar *custom-file-name* "custom-file.el"
+(defvar *custom-file-name* (expand-file-name "custom-file.el" user-emacs-directory)
   "`customize' will save its settings in this file.
 Set it to nil to append to this file.")
 
@@ -351,12 +360,15 @@ MExclude files with regexp: ")
 ;;;
 
 
-;; Initial frame fix under Gnome
+;; Frame size fix under Gnome (prevents occasional creation of very small frames)
 (when (and (memq (window-system) '(x pgtk))
-	   (string= (getenv "DESKTOP_SESSION") "gnome"))
+	   (string-equal "GNOME" (getenv "XDG_CURRENT_DESKTOP")))
   (customize-set-variable 'initial-frame-alist
-			  '((width . 90) (height . 45)))
-  (set-frame-size nil 90 45))
+			  '((width . 90) (height . 35)))
+  (set-frame-size nil 90 35)
+  (customize-set-variable 'default-frame-alist
+			  '((width . 90) (height . 35)))
+  (set-frame-size nil 90 35))
 
 ;; General keybindings
 
@@ -377,6 +389,7 @@ MExclude files with regexp: ")
   (bind-key "s-u" #'revert-buffer))
 
 ;; Remap the insert-char shortcuts
+(unbind-key "s-8")
 (bind-key "s-8" 'iso-transl-ctl-x-8-map key-translation-map)
 
 ;; Window-resizing keybindings
@@ -462,7 +475,11 @@ MExclude files with regexp: ")
       (side . bottom)
       (slot . 0)
       (dedicated . t)
-      (window-parameters . ((no-other-window . t)))))))
+      (window-parameters . ((no-other-window . t))))
+     ("\\*gud-.*\\*"
+      (display-buffer-reuse-window
+       display-buffer-use-some-window)
+      ((dedicated . t))))))
 
 ;; Whitespace
 (use-package whitespace
@@ -541,8 +558,7 @@ MExclude files with regexp: ")
   ;; default. Since the hidden indent characters appear on virtually every line,
   ;; they may give the impression of an increase in `line-spacing', which is
   ;; however left untouched.
-  (org-indent
-   ((t (:inherit org-hide))))
+  (org-indent ((t (:inherit org-hide))))
   :hook
   (org-mode . visual-line-mode)
   (org-agenda-mode . hl-line-mode)
@@ -631,16 +647,16 @@ MExclude files with regexp: ")
 ;; (alternatively, check the mode-line-bell package)
 (customize-set-variable 'visible-bell t)
 
-;; Resize window pixel-wise with mouse
-(customize-set-variable 'frame-resize-pixelwise t)
-
-;; Optionally transparent frame
-(customize-set-variable
- 'default-frame-alist
- (add-to-list 'default-frame-alist (cons 'alpha *transparency-alpha*)))
-
 ;; Replace the default scratch message
-(customize-set-variable 'initial-scratch-message (lm/string-from-file *initial-scratch-message*))
+(when (file-exists-p *initial-scratch-message*)
+  (customize-set-variable 'initial-scratch-message
+			  (lm/string-from-file *initial-scratch-message*)))
+
+(when (display-graphic-p)
+  ;; Resize window pixel-wise with mouse
+  (customize-set-variable 'frame-resize-pixelwise t)
+  ;; Optionally transparent frame
+  (lm/adjust-transparency *transparency-alpha*))
 
 ;; Convert non-visible ^L (form feed) into a horizontal line
 (use-package page-break-lines
@@ -875,8 +891,7 @@ MExclude files with regexp: ")
   :ensure t
   :custom
   (prescient-save-file
-   (expand-file-name
-    (format "%s/%s" user-emacs-directory "prescient-save.el")))
+   (expand-file-name "prescient-save.el" user-emacs-directory))
   :config
   ;; Keep the rankings between sessions
   (prescient-persist-mode))
@@ -977,17 +992,22 @@ MExclude files with regexp: ")
   :ensure yasnippet
   :bind
   (:map company-active-map
-   ("M-n" . nil)
-   ("M-p" . nil)
-   ("C-n" . company-select-next-or-abort)
-   ("C-p" . company-select-previous-or-abort))
+	("M-n" . nil)
+	("M-p" . nil)
+	("C-n" . company-select-next-or-abort)
+	("C-p" . company-select-previous-or-abort))
   :custom
   (company-selection-wrap-around t)
   (company-idle-delay 0.0)
   (company-minimum-prefix-length 1)
   :hook
   (prog-mode . company-mode)
-  (prog-mode . yas-minor-mode))
+  (prog-mode . yas-minor-mode)
+  :config
+  ;; conflicts with eglot+clangd
+  (customize-set-variable 'company-backends
+			  (remq 'company-clang company-backends)))
+
 
 ;; Eldoc configuration
 (use-package eldoc
@@ -1069,12 +1089,6 @@ MExclude files with regexp: ")
 
 ;; ESS - Emacs Speaks Statistics: R and R Markdown suite
 
-(defun insert-pipe ()
-  "Insert the pipe (%>%) operator at point, as defined by the magrittr
-package."
-  (interactive)
-  (insert "%>% "))
-
 ;; Automate the pdf rendering of R Markdown projects
 (defun rmarkdown-render (filename)
   "Run rmarkdown::render on the chosen file.
@@ -1088,6 +1102,12 @@ must be installed at a minimum."
 
 (use-package ess
   :ensure t
+  :preface
+  (defun insert-pipe ()
+    "Insert the pipe (%>%) operator at point, as defined by the magrittr
+package."
+    (interactive)
+    (insert "%>% "))
   :custom
   (ess-use-ido nil)
   (ess-style 'RStudio)
@@ -1103,7 +1123,14 @@ must be installed at a minimum."
   :ensure t
   :after ess)
 
-;; JavaScript configuration
+;; Web dev configuration
+
+(use-package mhtml-mode
+  :config
+  ;; Remove useless `facemenu-keymap' binding, clashing with our custom
+  ;; `other-window' binding
+  (unbind-key "M-o" html-mode-map)
+  (unbind-key "M-o" mhtml-mode-map))
 
 (use-package js-comint
   :ensure t)
@@ -1233,14 +1260,26 @@ when called interactively."
 
 (use-package cc-mode
   :bind
-  (:map c-mode-map ("<f5>" . compile)
-   :map c++-mode-map ("<f5>" . compile)))
+  (:map c-mode-map
+	("<f7>" . compile)
+	("<f5>" . gud-gdb)
+  :map c++-mode-map
+	("<f7>" . compile)
+	("<f5>" . gud-gdb))
+  :hook
+  ((c-mode c++-mode) . (lambda () (c-set-style "custom")))
+  :config
+  ;; "custom" is identical to "stroustrup" for now, but it can be customized
+  (c-add-style "custom" '("stroustrup" (c-basic-offset . 4))))
 
-
-(defun lm/untabified-indent ()
-  (indent-tabs-mode -1))
+;; Unlike for other languages (Python), c-ts-mode and c++-ts-mode are their own package
 
 (use-package c-ts-mode
+  :preface
+
+  (defun lm/untabified-indent ()
+    (indent-tabs-mode -1))
+
   :hook
   (c-ts-mode . lm/untabified-indent)
   (c++-ts-mode . lm/untabified-indent)
@@ -1249,16 +1288,24 @@ when called interactively."
   (c-ts-mode-indent-offset 4)
   (c-ts-mode-indent-style 'bsd)
   :bind
-  (:map c-ts-mode-map ("<f5>" . compile)
-	:map c++-ts-mode-map ("<f5>" . compile)))
+  (:map c-ts-mode-map
+	("<f7>" . compile)
+	("<f5>" . gud-gdb)
+   :map c++-ts-mode-map
+	("<f7>" . compile)
+	("<f5>" . gud-gdb)))
 
 (use-package make-mode
   :bind
-   (:map makefile-mode-map ("<f5>" . compile)))
+   (:map makefile-mode-map ("<f7>" . compile)))
 
 (use-package compile
   :custom
   (compile-command "make -kj "))
+
+(use-package gdb-mi
+  :custom
+  (gud-gdb-command-name (format "%s -i=mi" *gdb-binary*)))
 
 ;; Company backend for C/C++ headers
 (use-package company-c-headers
@@ -1274,15 +1321,11 @@ when called interactively."
     (add-to-list 'company-c-headers-path-system (expand-file-name path))))
 
 ;; ccls: C/C++ backend for LSP
-(use-package ccls
+;; (unquote if *c/c++-lsp-server-binary* is set to ccls)
+'(use-package ccls
   :ensure t
   :custom
   (ccls-executable *c/c++-lsp-server-binary*))
-
-;; Native debugger interface (`gud')
-(use-package gdb-mi
-  :custom
-  (gud-gdb-command-name *gdb-binary*))
 
 ;; Common Lisp support
 
@@ -1333,7 +1376,9 @@ when called interactively."
 	("C-c <" . gdscript-indent-shift-left)
 	("C-c >" . gdscript-indent-shift-right))
   :custom
-  (gdscript-use-tab-indents t))
+  (gdscript-use-tab-indents t)
+  (gdscript-godot-executable
+   (expand-file-name *godot-app-path*)))
 
 
 ;;;

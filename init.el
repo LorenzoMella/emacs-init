@@ -647,18 +647,16 @@ MExclude files with regexp: ")
 ;; (alternatively, check the mode-line-bell package)
 (customize-set-variable 'visible-bell t)
 
-;; Resize window pixel-wise with mouse
-(customize-set-variable 'frame-resize-pixelwise t)
-
-;; Optionally transparent frame
-(customize-set-variable
- 'default-frame-alist
- (add-to-list 'default-frame-alist (cons 'alpha *transparency-alpha*)))
-
 ;; Replace the default scratch message
 (when (file-exists-p *initial-scratch-message*)
   (customize-set-variable 'initial-scratch-message
 			  (lm/string-from-file *initial-scratch-message*)))
+
+(when (display-graphic-p)
+  ;; Resize window pixel-wise with mouse
+  (customize-set-variable 'frame-resize-pixelwise t)
+  ;; Optionally transparent frame
+  (lm/adjust-transparency *transparency-alpha*))
 
 ;; Convert non-visible ^L (form feed) into a horizontal line
 (use-package page-break-lines
@@ -893,8 +891,7 @@ MExclude files with regexp: ")
   :ensure t
   :custom
   (prescient-save-file
-   (expand-file-name
-    (format "%s/%s" user-emacs-directory "prescient-save.el")))
+   (expand-file-name "prescient-save.el" user-emacs-directory))
   :config
   ;; Keep the rankings between sessions
   (prescient-persist-mode))
